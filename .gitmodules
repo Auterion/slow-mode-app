@@ -1,0 +1,7 @@
+[submodule "libmav"]
+	path = services/slowmode-app/libs/libmav
+	url = https://github.com/Auterion/libmav
+	branch = velocity-setpoint-message
+[submodule "mavlink"]
+	path = services/slowmode-app/libs/mavlink
+	url = git@github.com:Auterion/mavlink.git
