@@ -1,0 +1,23 @@
+auterion-api-version: 1
+# none  - doesnt remove base img
+# v0    - removes v0 base image
+auterion-app-base: v0
+
+app-name: slowmode-app
+app-version: 0.0.1
+target-platform: skynode
+app-author: com.auterion
+
+services:
+  slowmode-app: 
+    # where to find dockefile
+    build: services/slowmode-app
+    # env_file:
+    #   - settings.default.env
+
+
+
+# #### DOCKER COMPOSE MANUAL OVERRIDE API ####
+#   You can manually override the generated docker compose file
+#   by uncommenting the section below. Note that this API
+#   may get more and more restricted in the future
