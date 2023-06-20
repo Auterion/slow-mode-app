@@ -2,7 +2,7 @@
 
 #include "mav/Network.h"
 #include "mav/TCPClient.h"
-#include "mav/UDPClient.h"
+#include "mav/UDPServer.h"
 #include "mav/MessageSet.h"
 
 #include "VelocityLimits.h"
@@ -16,10 +16,10 @@ int main(int argc, char** argv) {
     std::string path = fs::current_path().string() + "/mavlink/common.xml";
     auto message_set = mav::MessageSet(path);
 
-    VelocityLimits velocityLimits(message_set, 1.0f, 1.0f, 1.0f, 1.0f, 10);
+    VelocityLimits velocityLimits(message_set, 2.0f, 1.0f, 1.0f, 1.0f, 10);
 
     // auto physical = mav::TCPClient("10.41.1.1", 5790);
-    auto physical = mav::UDPClient("127.0.0.1", 14280);
+    auto physical = mav::UDPServer(14540);
 
     mav::NetworkRuntime runtime(message_set, physical);
     auto connection = runtime.awaitConnection(4000);
