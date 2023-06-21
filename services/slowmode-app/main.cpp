@@ -18,9 +18,14 @@ int main(int argc, char** argv) {
 
     VelocityLimits velocityLimits(message_set, 2.0f, 1.0f, 1.0f, 1.0f, 10);
 
-    // auto physical = mav::TCPClient("10.41.1.1", 5790);
-    auto physical = mav::UDPServer(14540);
-
+    #ifdef UDP
+        std::cout << "--- UDP connection ---" << std::endl;
+        auto physical = mav::UDPServer(14540);
+    #else
+        std::cout << "--- TCP connection ---" << std::endl;
+        auto physical = mav::TCPClient("10.41.1.1", 5790);
+    #endif
+    
     mav::NetworkRuntime runtime(message_set, physical);
     auto connection = runtime.awaitConnection(4000);
 
