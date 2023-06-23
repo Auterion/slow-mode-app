@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 
 #include "mav/Network.h"
 #include "mav/TCPClient.h"
@@ -6,41 +7,45 @@
 #include "mav/MessageSet.h"
 
 #include "VelocityLimits.h"
+#include "ConnectionHandler.h"
 
-#include <filesystem>
 namespace fs = std::filesystem;
 
 int main(int argc, char** argv) {
     std::cout << "Slow mode app" << std::endl;
-
     std::string path = fs::current_path().string() + "/mavlink/common.xml";
     auto message_set = mav::MessageSet(path);
 
-    VelocityLimits velocityLimits(message_set, 2.0f, 1.0f, 1.0f, 1.0f, 10);
+    ConnectionHandler ch(message_set);
+    VelocityLimits velocityLimits(message_set, 1.0f, 1.0f, 1.0f, 1.0f, 10);
+    if (argc == 6) {
+        velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
+        velocityLimits.setVerticalSpeed(std::stof(argv[2]));
+        velocityLimits.setYawRate(std::stof(argv[3]));
+        velocityLimits.setTimeout(std::stof(argv[4]));
+        velocityLimits.setTypeMask(std::stoi(argv[5]));
+    }
 
-    #ifdef UDP
-        std::cout << "--- UDP connection ---" << std::endl;
-        auto physical = mav::UDPServer(14540);
-    #else
-        std::cout << "--- TCP connection ---" << std::endl;
-        auto physical = mav::TCPClient("10.41.1.1", 5790);
-    #endif
-    
-    mav::NetworkRuntime runtime(message_set, physical);
-    auto connection = runtime.awaitConnection(4000);
+    // auto expectation = ch.connection->expect("COMMAND_ACK");
+    // auto request = ch.getPMRequest();
+
+    // std::cout<<"Sending request:" << request->toString() << std::endl;
+    // ch.connection->send(*request);
+    // auto res = ch.connection->receive(expectation, 3000);
+
+    std::cout<<"Sending velocity limits:" << velocityLimits.getMessage().toString() << std::endl;
 
     while(true) {
-        // TODO: Decide which input to base the limits on (zoom, knob, GCS values)
-        // velocityLimits.getLimitsFromInput();
-        // velocityLimits.setLimits();
+        // TODO: Update velocity limits based on inputs
+        ch.updateParams();
+        // velocityLimits.updateParams();
+
         auto message = velocityLimits.getMessage();
 
         std::cout<<"Sending message..." << std::endl;
-        connection->send(message);
+        ch.connection->send(message);
 
-        // auto response = connection->receive("VELOCITY_LIMITS", 1000);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
-
     return 0;
 }

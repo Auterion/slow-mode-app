@@ -10,11 +10,11 @@ project(slowmode-app
 message("-----CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 message("-----CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
 
-add_executable(slowmode-app-udp main.cpp VelocityLimits.cpp)
+add_executable(slowmode-app-udp main.cpp VelocityLimits.cpp ConnectionHandler.cpp)
 target_compile_definitions(slowmode-app-udp PRIVATE UDP)
 target_include_directories(slowmode-app-udp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libs/libmav/include)
 
-add_executable(slowmode-app-tcp main.cpp VelocityLimits.cpp)
+add_executable(slowmode-app-tcp main.cpp VelocityLimits.cpp ConnectionHandler.cpp)
 target_include_directories(slowmode-app-tcp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libs/libmav/include)
 
 # copy mavlink message definitions to the build directory

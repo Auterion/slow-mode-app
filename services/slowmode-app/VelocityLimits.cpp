@@ -13,6 +13,31 @@ VelocityLimits::VelocityLimits(const mav::MessageSet &message_set, float horizon
 VelocityLimits::~VelocityLimits() {
 }
 
+bool VelocityLimits::setHorizontalSpeed(float horizontal_speed) {
+    _horizontal_speed = horizontal_speed;
+    return true;
+}
+
+bool VelocityLimits::setVerticalSpeed(float vertical_speed) {
+    _vertical_speed = vertical_speed;
+    return true;
+}
+
+bool VelocityLimits::setYawRate(float yaw_rate) {
+    _yaw_rate = yaw_rate;
+    return true;
+}
+
+bool VelocityLimits::setTimeout(float timeout) {
+    _timeout = timeout;
+    return true;
+}
+
+bool VelocityLimits::setTypeMask(int type_mask) {
+    _type_mask = type_mask;
+    return true;
+}
+
 float VelocityLimits::getHorizontalSpeed() {
     return _horizontal_speed;
 }

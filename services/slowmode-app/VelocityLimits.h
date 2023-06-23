@@ -15,6 +15,13 @@ class VelocityLimits {
     public:
         VelocityLimits(const mav::MessageSet &message_set, float horizontal_speed, float vertical_speed, float yaw_rate, float timeout, int type_mask);
         ~VelocityLimits();
+
+        bool setHorizontalSpeed(float horizontal_speed);
+        bool setVerticalSpeed(float vertical_speed);
+        bool setYawRate(float yaw_rate);
+        bool setTimeout(float timeout);
+        bool setTypeMask(int type_mask);
+
         float getHorizontalSpeed();
         float getVerticalSpeed();
         float getYawRate();
