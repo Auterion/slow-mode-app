@@ -36,3 +36,7 @@ bool ConnectionHandler::sendRequest(const mav::Message &request) {
     return true;
 }
 
+bool ConnectionHandler::getReadings() {
+    return true;
+}
+

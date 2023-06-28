@@ -8,26 +8,22 @@ class VelocityLimits {
         float _horizontal_speed;
         float _vertical_speed;
         float _yaw_rate;
-        float _timeout;
-        int _type_mask;
         const mav::MessageSet &_message_set;
 
     public:
-        VelocityLimits(const mav::MessageSet &message_set, float horizontal_speed, float vertical_speed, float yaw_rate, float timeout, int type_mask);
+        VelocityLimits(const mav::MessageSet &message_set, float horizontal_speed, float vertical_speed, float yaw_rate);
         ~VelocityLimits();
 
         bool setHorizontalSpeed(float horizontal_speed);
         bool setVerticalSpeed(float vertical_speed);
         bool setYawRate(float yaw_rate);
-        bool setTimeout(float timeout);
-        bool setTypeMask(int type_mask);
 
         float getHorizontalSpeed();
         float getVerticalSpeed();
         float getYawRate();
-        float getTimeout();
-        int getTypeMask();
         mav::Message getMessage();
+
+        bool update();
 };
 
 #endif // VELOCITYLIMITS_H

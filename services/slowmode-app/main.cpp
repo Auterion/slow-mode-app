@@ -17,13 +17,11 @@ int main(int argc, char** argv) {
     auto message_set = mav::MessageSet(path);
 
     ConnectionHandler ch(message_set);
-    VelocityLimits velocityLimits(message_set, 1.0f, 1.0f, 1.0f, 1.0f, 10);
-    if (argc == 6) {
+    VelocityLimits velocityLimits(message_set, 1.0f, 1.0f, 1.0f);
+    if (argc == 4) {
         velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
         velocityLimits.setVerticalSpeed(std::stof(argv[2]));
         velocityLimits.setYawRate(std::stof(argv[3]));
-        velocityLimits.setTimeout(std::stof(argv[4]));
-        velocityLimits.setTypeMask(std::stoi(argv[5]));
     }
 
     // auto expectation = ch.connection->expect("COMMAND_ACK");
@@ -36,10 +34,8 @@ int main(int argc, char** argv) {
     std::cout<<"Sending velocity limits:" << velocityLimits.getMessage().toString() << std::endl;
 
     while(true) {
-        // TODO: Update velocity limits based on inputs
-        ch.updateParams();
-        // velocityLimits.updateParams();
-
+        // TODO: Update velocity limits based on readings
+        // velocityLimits.update(ch.getReadings());
         auto message = velocityLimits.getMessage();
 
         std::cout<<"Sending message..." << std::endl;

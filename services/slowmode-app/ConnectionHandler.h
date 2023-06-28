@@ -26,12 +26,12 @@ class ConnectionHandler {
     public:
         std::shared_ptr<mav::Connection> connection;
         ConnectionHandler(const mav::MessageSet &message_set);
-
         ~ConnectionHandler();
         bool initPMRequest();
         std::shared_ptr<mav::Message> getPMRequest();
         bool startPollingPM();
         bool sendRequest(const mav::Message &request);
+        bool getReadings();
 };
 
 #endif // CONNECTIONHANDLER_H

@@ -1,12 +1,10 @@
 #include "VelocityLimits.h"
 
-VelocityLimits::VelocityLimits(const mav::MessageSet &message_set, float horizontal_speed, float vertical_speed, float yaw_rate, float timeout, int type_mask) :
+VelocityLimits::VelocityLimits(const mav::MessageSet &message_set, float horizontal_speed, float vertical_speed, float yaw_rate) :
     _message_set(message_set),
     _horizontal_speed(horizontal_speed),
     _vertical_speed(vertical_speed),
-    _yaw_rate(yaw_rate),
-    _timeout(timeout),
-    _type_mask(type_mask)
+    _yaw_rate(yaw_rate)
 {
 }
 
@@ -28,16 +26,6 @@ bool VelocityLimits::setYawRate(float yaw_rate) {
     return true;
 }
 
-bool VelocityLimits::setTimeout(float timeout) {
-    _timeout = timeout;
-    return true;
-}
-
-bool VelocityLimits::setTypeMask(int type_mask) {
-    _type_mask = type_mask;
-    return true;
-}
-
 float VelocityLimits::getHorizontalSpeed() {
     return _horizontal_speed;
 }
@@ -50,20 +38,14 @@ float VelocityLimits::getYawRate() {
     return _yaw_rate;
 }
 
-float VelocityLimits::getTimeout() {
-    return _timeout;
-}
-
-int VelocityLimits::getTypeMask() {
-    return _type_mask;
-}
-
 mav::Message VelocityLimits::getMessage() {
-    auto message = _message_set.create("VELOCITY_LIMIT");
-    message["horizontal_speed"] = _horizontal_speed;
-    message["vertical_speed"] = _vertical_speed;
-    message["yaw_rate"] = _yaw_rate;
-    message["timeout"] = _timeout;
-    message["type_mask"] = _type_mask;
+    auto message = _message_set.create("VELOCITY_LIMITS");
+    message["horizontal_velocity_limit"] = _horizontal_speed;
+    message["vertical_velocity_limit"] = _vertical_speed;
+    message["yaw_rate_limit"] = _yaw_rate;
     return message;
+}
+
+bool VelocityLimits::update() {
+    return true;
 }
