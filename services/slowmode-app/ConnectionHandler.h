@@ -8,20 +8,31 @@
 #include "mav/TCPClient.h"
 #include "mav/UDPServer.h"
 
-#include <thread>
-
 class ConnectionHandler {
     private:
-        std::shared_ptr<mav::Message> _PM_request;
+        std::shared_ptr<mav::Message> _PM_request, _PM_request_CAM_SETTINGS;
         #ifdef UDP
             mav::UDPServer physical = mav::UDPServer(14540);
         #else
             mav::TCPClient physical = mav::TCPClient("10.41.1.1", 5790);
         #endif
-        float _zoom_level; // race cond
+        float _zoom_level = 0;  // race cond
+        float _knob_level = 0;  // race cond
+        bool _slow_mode_on = 0; // race cond
+        float _PM_request_freq = 1;
+        float _AMC_request_freq = 1;
+        std::pair<int, int> _min_max_target_search = {100,106};
+
         std::thread _PM_thread, _AMC_thread;
         const mav::MessageSet &_message_set;
         std::shared_ptr<mav::NetworkRuntime> runtime;
+
+        void _handlePM();
+        void _handleAMC();
+
+        int _target_component; // target component of the PM
+        // Looks for the target component of the PM 100-106
+        int _findTargetComponent();
         
     public:
         std::shared_ptr<mav::Connection> connection;
