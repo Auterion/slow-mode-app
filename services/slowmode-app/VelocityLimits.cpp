@@ -46,6 +46,10 @@ mav::Message VelocityLimits::getMessage() {
     return message;
 }
 
-bool VelocityLimits::update() {
+bool VelocityLimits::update(const ConnectionHandler &ch) {
+    // auto tmp = ch.getHorizontalSpeed();
+    setHorizontalSpeed(ch.getHorizontalSpeed());
+    setVerticalSpeed(ch.getVerticalSpeed());
+    setYawRate(ch.getYawRate());
     return true;
 }

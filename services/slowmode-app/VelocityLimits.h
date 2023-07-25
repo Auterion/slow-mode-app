@@ -2,6 +2,7 @@
 #define VELOCITYLIMITS_H
 
 #include "mav/MessageSet.h"
+#include "ConnectionHandler.h"
 
 class VelocityLimits {
     private:
@@ -23,7 +24,7 @@ class VelocityLimits {
         float getYawRate();
         mav::Message getMessage();
 
-        bool update();
+        bool update(const ConnectionHandler &ch);
 };
 
 #endif // VELOCITYLIMITS_H
