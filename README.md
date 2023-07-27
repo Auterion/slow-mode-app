@@ -8,6 +8,9 @@ mkdir build && cd build
 ```
 Followed by:
 ```
+git submodule update --init --recursive
+```
+```
 cmake -S ../services/slowmode-app && make
 ```
 To run in UDP mode:
