@@ -1,7 +1,7 @@
 auterion-api-version: 1
 # none  - doesnt remove base img
 # v0    - removes v0 base image
-auterion-app-base: v0
+auterion-app-base: v2
 
 app-name: slowmode-app
 app-version: 0.0.1

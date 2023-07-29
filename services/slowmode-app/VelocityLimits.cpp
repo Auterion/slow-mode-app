@@ -11,6 +11,24 @@ VelocityLimits::VelocityLimits(const mav::MessageSet &message_set, float horizon
 VelocityLimits::~VelocityLimits() {
 }
 
+void VelocityLimits::computeYawRateLimit(float focal_length, float zoom_level, float standard_focal_length, float yaw_rate_limit_scaler) {
+    try
+    {
+        if (focal_length != focal_length || focal_length == 0.f) {
+            setYawRate(NAN);
+            return;
+        } else {
+            setYawRate(2 * yaw_rate_limit_scaler * focal_length/(standard_focal_length * zoom_level) - 1);
+            return;
+        }
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        setYawRate(NAN);
+    }
+}
+
 bool VelocityLimits::setHorizontalSpeed(float horizontal_speed) {
     _horizontal_speed = horizontal_speed;
     return true;
@@ -44,12 +62,4 @@ mav::Message VelocityLimits::getMessage() {
     message["vertical_velocity_limit"] = _vertical_speed;
     message["yaw_rate_limit"] = _yaw_rate;
     return message;
-}
-
-bool VelocityLimits::update(const ConnectionHandler &ch) {
-    // auto tmp = ch.getHorizontalSpeed();
-    setHorizontalSpeed(ch.getHorizontalSpeed());
-    setVerticalSpeed(ch.getVerticalSpeed());
-    setYawRate(ch.getYawRate());
-    return true;
 }
