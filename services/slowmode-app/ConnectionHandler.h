@@ -19,7 +19,7 @@ class ConnectionHandler {
         #endif
 
         std::pair<int, int> _min_max_target_search = {100,106};
-        std::thread _PM_thread;
+        std::thread _PM_thread, _PM_heartbeat_thread;
         const mav::MessageSet &_message_set;
         std::shared_ptr<mav::NetworkRuntime> _runtime;
 
@@ -27,12 +27,17 @@ class ConnectionHandler {
         // Looks for the target component of the PM 100-106
         int _findTargetComponent();
         void _handlePM();
+        void _monitorPMHeartbeat();
 
         std::atomic<float> _focal_legth = NAN;
         std::atomic<float> _zoom_level = NAN;
+        std::atomic<bool> _focal_length_set = false;
+        std::atomic<bool> _PM_exists = false;
         float _horizontal_speed = NAN;
         float _vertical_speed = NAN;
         float _yaw_rate = NAN;
+
+        std::chrono::milliseconds _heartbeat_timeout;
 
     public:
         std::shared_ptr<mav::Connection> connection;
@@ -40,7 +45,6 @@ class ConnectionHandler {
         ~ConnectionHandler();
         bool initPMRequest();
         std::shared_ptr<mav::Message> getPMRequest();
-        bool sendRequest(const mav::Message &request);
         float getFocalLength                () const {return _focal_legth;};
         float getZoomLevel                  () const {return _zoom_level;};
 
