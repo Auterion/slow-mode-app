@@ -11,6 +11,12 @@
 
 namespace fs = std::filesystem;
 
+enum Modes {
+    linear = 0,
+    quadratic,
+    FOV
+};
+
 std::string getEnvVar(std::string const & key) {
     const char * val = getenv(key.c_str());
     if (val == NULL) {
@@ -20,29 +26,59 @@ std::string getEnvVar(std::string const & key) {
     return val;
 }
 
+int getScalingMode(std::string const & key) {
+    const char * val = getenv(key.c_str());
+    int mode;
+    try
+    {
+        if (val == NULL) {
+            throw std::invalid_argument("Environment variable " + key + " not found \n");
+        }
+        std::cout<<"Environment variable "<<key<<" found with value "<<val<<std::endl;
+        mode = std::stoi(getEnvVar("SCALING_MODE"));
+        if (mode != Modes::linear && mode != Modes::quadratic && mode != Modes::FOV) {
+            std::cout<<"Incorrect scaling mode! Set to linear"<<std::endl;
+            return(Modes::linear);
+        } else {
+            std::cout<<"Scaling mode: "<<mode<<std::endl;
+            return(mode);
+        }
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
+    return(Modes::FOV);
+}
+
+void manualBroadcast(VelocityLimits& velocityLimits, ConnectionHandler& ch, char** argv) {
+    std::cout<<"Manual velocity limits"<<std::endl;
+    velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
+    velocityLimits.setVerticalSpeed(std::stof(argv[2]));
+    velocityLimits.setYawRate(std::stof(argv[3]));
+
+    while(true) {
+        auto message = velocityLimits.getMessage();
+        ch.connection->send(message);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+}
+
 int main(int argc, char** argv) {
     std::cout << "Slow mode app" << std::endl;
-    std::string path = fs::current_path().string() + "/mavlink/common.xml";
     auto message_set = mav::MessageSet(path);
-    float standard_focal_length = 35.0f;
+    float standard_focal_length = 24.0f; //A7R
+    float standard_frame_dim = 43.9f; //A7R
+    float max_yaw_rate_with_camera = 45.0f; //deg/s
 
     ConnectionHandler ch(message_set);
-    // scale from -1 to 1
-    VelocityLimits velocityLimits(message_set, 1.0f, 1.0f, 1.0f);
+    VelocityLimits velocityLimits(message_set, NAN, NAN, max_yaw_rate_with_camera, standard_focal_length, standard_frame_dim);
 
-    // Manual assignments of velocity limits
+    // Manual assignments of velocity limits if 3 arguments are passed
     if (argc == 4) {
-        std::cout<<"Manual velocity limits"<<std::endl;
-        velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
-        velocityLimits.setVerticalSpeed(std::stof(argv[2]));
-        velocityLimits.setYawRate(std::stof(argv[3]));
-
-        while(true) {
-            auto message = velocityLimits.getMessage();
-            ch.connection->send(message);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
+        manualBroadcast(velocityLimits, ch, argv);
     }
 
     float yaw_rate_limit_scaler = 1.0f;
@@ -54,10 +90,18 @@ int main(int argc, char** argv) {
         yaw_rate_limit_scaler = 1.0f;
     }
 
+    int mode = getScalingMode("SCALING_MODE");
+    std::cout<<"Scaling mode: "<<mode<<std::endl;
+
     while(true) {
-        velocityLimits.computeYawRateLimit(ch.getFocalLength(), ch.getZoomLevel(), standard_focal_length, yaw_rate_limit_scaler);
+        if (ch.getPMExists()) {
+            velocityLimits.computeYawRate(ch.getFocalLength(), ch.getZoomLevel(), standard_focal_length, mode);
+        } else {
+            velocityLimits.setYawRate(NAN);
+        }
         auto message = velocityLimits.getMessage();
         ch.connection->send(message);
+        std::cout<<"Yaw rate limit: "<<velocityLimits.getYawRate()<<std::endl;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }

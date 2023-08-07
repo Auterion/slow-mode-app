@@ -4,4 +4,4 @@
 [submodule "mavlink"]
 	path = services/slowmode-app/libs/mavlink
 	url = git@github.com:Auterion/mavlink.git
-	branch = velocity-setpoint-message
+	branch = release/2.7-mavlink

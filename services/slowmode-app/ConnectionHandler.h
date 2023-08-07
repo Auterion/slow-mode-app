@@ -47,6 +47,7 @@ class ConnectionHandler {
         std::shared_ptr<mav::Message> getPMRequest();
         float getFocalLength                () const {return _focal_legth;};
         float getZoomLevel                  () const {return _zoom_level;};
+        bool getPMExists                    () const {return _PM_exists;};
 
         float getHorizontalSpeed            () const {return _horizontal_speed;};
         float getVerticalSpeed              () const {return _vertical_speed;};

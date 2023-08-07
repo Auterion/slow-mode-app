@@ -64,7 +64,6 @@ void ConnectionHandler::_handlePM() {
                 continue;
             }
 
-            std::cout<<"test2" << std::endl;
             // Reqeuest camera information to get the focal length
             (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_INFORMATION");
             auto expectation = connection->expect("CAMERA_INFORMATION");
@@ -87,7 +86,6 @@ void ConnectionHandler::_handlePM() {
         (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_SETTINGS");
         connection->send(*_PM_request);
         while (_PM_exists && _focal_length_set) {
-            // std::cout<<"test3" << std::endl;
             // Monitor camera settings changes
             auto expectation = connection->expect("CAMERA_SETTINGS");
             try
