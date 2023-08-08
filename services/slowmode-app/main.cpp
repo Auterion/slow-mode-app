@@ -68,6 +68,7 @@ void manualBroadcast(VelocityLimits& velocityLimits, ConnectionHandler& ch, char
 
 int main(int argc, char** argv) {
     std::cout << "Slow mode app" << std::endl;
+    std::string path = fs::current_path().string() + "/mavlink/auterion.xml";
     auto message_set = mav::MessageSet(path);
     float standard_focal_length = 24.0f; //A7R
     float standard_frame_dim = 43.9f; //A7R

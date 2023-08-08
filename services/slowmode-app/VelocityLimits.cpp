@@ -86,8 +86,8 @@ float VelocityLimits::getYawRate() {
 
 mav::Message VelocityLimits::getMessage() {
     auto message = _message_set.create("VELOCITY_LIMITS");
-    message["horizontal_velocity_limit"] = _horizontal_speed;
-    message["vertical_velocity_limit"] = _vertical_speed;
-    message["yaw_rate_limit"] = _yaw_rate;
+    message["horizontal_velocity"] = _horizontal_speed;
+    message["vertical_velocity"] = _vertical_speed;
+    message["yaw_rate"] = _yaw_rate;
     return message;
 }
