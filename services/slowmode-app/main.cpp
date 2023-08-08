@@ -73,7 +73,29 @@ int main(int argc, char** argv) {
     float standard_focal_length = 24.0f; //A7R
     float standard_frame_dim = 43.9f; //A7R
     float max_yaw_rate_with_camera = 45.0f; //deg/s
+    float yaw_rate_multiplicator = 1.0f;
 
+    try {
+        yaw_rate_multiplicator = std::stof(getEnvVar("YAW_RATE_MULTIPLICATOR"));
+    }
+    catch (const std::invalid_argument& e) {
+        std::cerr << e.what();
+        yaw_rate_multiplicator = 1.0f;
+    }
+
+    try {
+        max_yaw_rate_with_camera = std::stof(getEnvVar("MAX_YAW_RATE"));
+    }
+    catch (const std::invalid_argument& e) {
+        std::cerr << e.what();
+        max_yaw_rate_with_camera = 45.0f;
+    }
+
+    int mode = getScalingMode("SCALING_MODE");
+    std::cout<<"Scaling mode: "<<mode<<std::endl;
+    std::cout<<"Max yaw rate: "<<max_yaw_rate_with_camera<<std::endl;
+    std::cout<<"Yaw rate multiplicator: "<<yaw_rate_multiplicator<<std::endl;
+    
     ConnectionHandler ch(message_set);
     VelocityLimits velocityLimits(message_set, NAN, NAN, max_yaw_rate_with_camera, standard_focal_length, standard_frame_dim);
 
@@ -82,17 +104,6 @@ int main(int argc, char** argv) {
         manualBroadcast(velocityLimits, ch, argv);
     }
 
-    float yaw_rate_limit_scaler = 1.0f;
-    try {
-        yaw_rate_limit_scaler = std::stof(getEnvVar("YAW_RATE_MULTIPLICATOR"));
-    }
-    catch (const std::invalid_argument& e) {
-        std::cerr << e.what();
-        yaw_rate_limit_scaler = 1.0f;
-    }
-
-    int mode = getScalingMode("SCALING_MODE");
-    std::cout<<"Scaling mode: "<<mode<<std::endl;
 
     while(true) {
         if (ch.getPMExists()) {
@@ -100,6 +111,7 @@ int main(int argc, char** argv) {
         } else {
             velocityLimits.setYawRate(NAN);
         }
+        velocityLimits.setYawRate(velocityLimits.getYawRate() * yaw_rate_multiplicator);
         auto message = velocityLimits.getMessage();
         ch.connection->send(message);
         std::cout<<"Yaw rate limit: "<<velocityLimits.getYawRate()<<std::endl;
