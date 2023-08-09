@@ -8,7 +8,7 @@ ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
     connection = _runtime->awaitConnection(4000);
     std::cout<<"Connected!" << std::endl;
 
-    initPMRequest();
+    _initPMRequest();
     _PM_thread = std::thread(&ConnectionHandler::_handlePM, this);
     _PM_thread.detach();
     _PM_heartbeat_thread = std::thread(&ConnectionHandler::_monitorPMHeartbeat, this);
@@ -135,7 +135,7 @@ void ConnectionHandler::_monitorPMHeartbeat() {
     }
 }
 
-bool ConnectionHandler::initPMRequest() {
+bool ConnectionHandler::_initPMRequest() {
     _PM_request = std::make_shared<mav::Message>(_message_set.create("COMMAND_LONG"));
     (*_PM_request)["target_system"] = 1;
     (*_PM_request)["target_component"] = 100;

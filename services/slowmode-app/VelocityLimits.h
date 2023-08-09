@@ -29,6 +29,7 @@ class VelocityLimits {
         bool setHorizontalSpeed(float horizontal_speed);
         bool setVerticalSpeed(float vertical_speed);
         bool setYawRate(float yaw_rate);
+        void setYawRateInDegrees(float yaw_rate);
 
         float getHorizontalSpeed();
         float getVerticalSpeed();

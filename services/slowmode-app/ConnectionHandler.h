@@ -28,14 +28,12 @@ class ConnectionHandler {
         int _findTargetComponent();
         void _handlePM();
         void _monitorPMHeartbeat();
+        bool _initPMRequest();
 
         std::atomic<float> _focal_legth = NAN;
         std::atomic<float> _zoom_level = NAN;
         std::atomic<bool> _focal_length_set = false;
         std::atomic<bool> _PM_exists = false;
-        float _horizontal_speed = NAN;
-        float _vertical_speed = NAN;
-        float _yaw_rate = NAN;
 
         std::chrono::milliseconds _heartbeat_timeout;
 
@@ -43,18 +41,10 @@ class ConnectionHandler {
         std::shared_ptr<mav::Connection> connection;
         ConnectionHandler(const mav::MessageSet &message_set);
         ~ConnectionHandler();
-        bool initPMRequest();
         std::shared_ptr<mav::Message> getPMRequest();
         float getFocalLength                () const {return _focal_legth;};
         float getZoomLevel                  () const {return _zoom_level;};
         bool getPMExists                    () const {return _PM_exists;};
-
-        float getHorizontalSpeed            () const {return _horizontal_speed;};
-        float getVerticalSpeed              () const {return _vertical_speed;};
-        float getYawRate                    () const {return _yaw_rate;};
-        void setHorizontalSpeed             (float horizontal_speed) {_horizontal_speed = horizontal_speed;};
-        void setVerticalSpeed               (float vertical_speed) {_vertical_speed = vertical_speed;};
-        void setYawRate                     (float yaw_rate) {_yaw_rate = yaw_rate;};
 };
 
 #endif // CONNECTIONHANDLER_H
