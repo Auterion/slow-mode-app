@@ -56,7 +56,7 @@ void manualBroadcast(VelocityLimits& velocityLimits, ConnectionHandler& ch, char
     std::cout<<"Manual velocity limits"<<std::endl;
     velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
     velocityLimits.setVerticalSpeed(std::stof(argv[2]));
-    velocityLimits.setYawRate(std::stof(argv[3]));
+    velocityLimits.setYawRateInDegrees(std::stof(argv[3]));
 
     while(true) {
         auto message = velocityLimits.getMessage();
@@ -109,12 +109,11 @@ int main(int argc, char** argv) {
         if (ch.getPMExists()) {
             velocityLimits.computeYawRate(ch.getFocalLength(), ch.getZoomLevel(), standard_focal_length, mode);
         } else {
-            velocityLimits.setYawRate(NAN);
+            velocityLimits.setYawRateInDegrees(NAN);
         }
         velocityLimits.setYawRate(velocityLimits.getYawRate() * yaw_rate_multiplicator);
         auto message = velocityLimits.getMessage();
         ch.connection->send(message);
-        std::cout<<"Yaw rate limit: "<<velocityLimits.getYawRate()<<std::endl;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }

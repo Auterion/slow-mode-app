@@ -35,7 +35,7 @@ float VelocityLimits::_computeFOVScale(float focal_length, float zoom_level) {
 void VelocityLimits::computeYawRate(float focal_length, float zoom_level, float standard_focal_length, int mode) {
     // If Pyaload Manager does not report focal length or zoom level, set yaw rate to default
     if (focal_length != focal_length || focal_length <= 0.f || zoom_level != zoom_level || zoom_level <= 0.f) {
-            setYawRate(_max_yaw_rate);
+            setYawRateInDegrees(_max_yaw_rate);
             return;
     }
 
@@ -54,7 +54,7 @@ void VelocityLimits::computeYawRate(float focal_length, float zoom_level, float 
             yaw_rate_scale = _computeLinearScale(focal_length, zoom_level);
             break;
     }
-    setYawRate(_max_yaw_rate * yaw_rate_scale);
+    setYawRateInDegrees(_max_yaw_rate * yaw_rate_scale);
 }
 
 bool VelocityLimits::setHorizontalSpeed(float horizontal_speed) {
@@ -69,6 +69,11 @@ bool VelocityLimits::setVerticalSpeed(float vertical_speed) {
 
 bool VelocityLimits::setYawRate(float yaw_rate) {
     _yaw_rate = yaw_rate;
+    return true;
+}
+
+bool VelocityLimits::setYawRateInDegrees(float yaw_rate) {
+    _yaw_rate = yaw_rate * M_PI / 180;
     return true;
 }
 
