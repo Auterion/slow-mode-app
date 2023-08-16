@@ -18,32 +18,6 @@ ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
 ConnectionHandler::~ConnectionHandler() {
 }
 
-int ConnectionHandler::_findTargetComponent() {
-    int curr_target = _min_max_target_search.first;
-    auto request = getPMRequest();
-    (*_PM_request)["command"] = 512;
-    // (*_PM_request)["target_component"] = _min_max_target_search.first;
-    std::cout << "Looking for Payload Manager's target component... " << std::endl;
-
-    for (int i = _min_max_target_search.first; i <= _min_max_target_search.second; i++) {
-        (*_PM_request)["target_component"] = i;
-        auto expectation = connection->expect("COMMAND_ACK");
-        connection->send(*request);
-        try
-        {
-            auto res = connection->receive(expectation, 1000);
-            std::cout << "Found Payload Manager on: " << i << std::endl;
-            return i;
-        }
-        catch(const std::exception& e)
-        {
-            // if (std::string(e.what()) != "Expected message timed out")
-                std::cerr << e.what() << '\n';
-        }
-    }
-    return -1;
-}
-
 void ConnectionHandler::_handlePM() {
     std::cout<<"Starting Payload Manager handler thread..." << std::endl;
 
@@ -51,21 +25,15 @@ void ConnectionHandler::_handlePM() {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         // Check if Payload Manager exists
-        if (!_PM_exists) {
+        if (!pmExists()) {
             continue;
         }
 
         // Check if focal length is set. If not yet, request it
         if (!_focal_length_set) {
-            _target_component = _findTargetComponent();
-
-            if (_target_component == -1) {
-                std::cout << "Could not find Payload Manager's target component..." << std::endl;
-                continue;
-            }
-
             // Reqeuest camera information to get the focal length
             (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_INFORMATION");
+            (*_PM_request)["target_component"] = static_cast<int>(_target_component);
             auto expectation = connection->expect("CAMERA_INFORMATION");
             connection->send(*_PM_request);
             try
@@ -85,7 +53,7 @@ void ConnectionHandler::_handlePM() {
         // Request camera settings first and then monitor changes
         (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_SETTINGS");
         connection->send(*_PM_request);
-        while (_PM_exists && _focal_length_set) {
+        while (pmExists() && _focal_length_set) {
             // Monitor camera settings changes
             auto expectation = connection->expect("CAMERA_SETTINGS");
             try
@@ -112,12 +80,13 @@ void ConnectionHandler::_monitorPMHeartbeat() {
         try
         {
             auto res = connection->receive(expectation, 1000);
-            if (res["type"].as<uint8_t>() == 30) {
-                if (!_PM_exists) {
-                    _PM_exists = true;
+            int component_id = static_cast<int>(res.header().componentId());
+            if (component_id >= _min_max_target_search.first && component_id <= _min_max_target_search.second) {
+                if (!pmExists()) {
                     std::cout<<"Payload Manager found!" << std::endl;
+                    std::cout<<"Received Payload Manager heartbeat from component id:" << component_id << std::endl;
+                    _target_component = component_id;
                 }
-                // std::cout<<"Received Payload Manager heartbeat" << std::endl;
                 last_pm_heartbeat = std::chrono::system_clock::now();
             }
         }
@@ -125,12 +94,12 @@ void ConnectionHandler::_monitorPMHeartbeat() {
         {
             std::cerr << e.what() << '\n';
         }
-        if (_PM_exists && std::chrono::system_clock::now() - last_pm_heartbeat > _heartbeat_timeout) {
+        if (pmExists() && std::chrono::system_clock::now() - last_pm_heartbeat > _heartbeat_timeout) {
             std::cout<<"Payload Manager timeout!" << std::endl;
-            _PM_exists = false;
             _focal_length_set = false;
             _focal_legth = NAN;
             _zoom_level = NAN;
+            _target_component = -1;
         }
     }
 }

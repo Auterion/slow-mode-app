@@ -23,7 +23,7 @@ class ConnectionHandler {
         const mav::MessageSet &_message_set;
         std::shared_ptr<mav::NetworkRuntime> _runtime;
 
-        int _target_component; // target component of the PM
+        std::atomic<int> _target_component = -1; // target component of the PM
         // Looks for the target component of the PM 100-106
         int _findTargetComponent();
         void _handlePM();
@@ -44,7 +44,7 @@ class ConnectionHandler {
         std::shared_ptr<mav::Message> getPMRequest();
         float getFocalLength                () const {return _focal_legth;};
         float getZoomLevel                  () const {return _zoom_level;};
-        bool getPMExists                    () const {return _PM_exists;};
+        bool pmExists                       () const {return _target_component == -1 ? false : true;};
 };
 
 #endif // CONNECTIONHANDLER_H
