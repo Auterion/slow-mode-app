@@ -35,7 +35,7 @@ int getScalingMode(std::string const & key) {
             throw std::invalid_argument("Environment variable " + key + " not found \n");
         }
         std::cout<<"Environment variable "<<key<<" found with value "<<val<<std::endl;
-        mode = std::stoi(getEnvVar("SCALING_MODE"));
+        mode = std::stoi(val);
         if (mode != Modes::linear && mode != Modes::quadratic && mode != Modes::FOV) {
             std::cout<<"Incorrect scaling mode! Set to linear"<<std::endl;
             return(Modes::linear);
@@ -102,11 +102,11 @@ int main(int argc, char** argv) {
     // Manual assignments of velocity limits if 3 arguments are passed
     if (argc == 4) {
         manualBroadcast(velocityLimits, ch, argv);
+        return 0;
     }
 
-
     while(true) {
-        if (ch.getPMExists()) {
+        if (ch.pmExists()) {
             velocityLimits.computeYawRate(ch.getFocalLength(), ch.getZoomLevel(), standard_focal_length, mode);
         } else {
             velocityLimits.setYawRateInDegrees(NAN);

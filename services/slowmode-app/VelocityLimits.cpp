@@ -19,14 +19,26 @@ VelocityLimits::~VelocityLimits() {
 }
 
 float VelocityLimits::_computeLinearScale(float focal_length, float zoom_level) {
+    if (focal_length == 0.f || zoom_level == 0.f) {
+        std::cout<<"Invalid focal length or zoom level"<<std::endl;
+        return 1.0f;
+    }
     return _standard_focal_length / (focal_length * zoom_level);
 }
 
 float VelocityLimits::_computeQuadraticScale(float focal_length, float zoom_level) {
+    if (focal_length == 0.f || zoom_level == 0.f) {
+        std::cout<<"Invalid focal length or zoom level"<<std::endl;
+        return 1.0f;
+    }
     return pow(_computeLinearScale(focal_length, zoom_level), 2);
 }
 
 float VelocityLimits::_computeFOVScale(float focal_length, float zoom_level) {
+    if (focal_length == 0.f || zoom_level == 0.f) {
+        std::cout<<"Invalid focal length or zoom level"<<std::endl;
+        return 1.0f;
+    }
     float fov = 2 * atan(_standard_frame_dim / (2 * focal_length * zoom_level));
     // std::cout<<"FOV scale: "<<tan(fov / 2) / tan(_standard_fov / 2)<<std::endl;
     return tan(fov / 2) / tan(_standard_fov / 2);
@@ -57,24 +69,24 @@ void VelocityLimits::computeYawRate(float focal_length, float zoom_level, float 
     setYawRateInDegrees(_max_yaw_rate * yaw_rate_scale);
 }
 
-bool VelocityLimits::setHorizontalSpeed(float horizontal_speed) {
+void VelocityLimits::setHorizontalSpeed(float horizontal_speed) {
     _horizontal_speed = horizontal_speed;
-    return true;
+    return;
 }
 
-bool VelocityLimits::setVerticalSpeed(float vertical_speed) {
+void VelocityLimits::setVerticalSpeed(float vertical_speed) {
     _vertical_speed = vertical_speed;
-    return true;
+    return;
 }
 
-bool VelocityLimits::setYawRate(float yaw_rate) {
+void VelocityLimits::setYawRate(float yaw_rate) {
     _yaw_rate = yaw_rate;
-    return true;
+    return;
 }
 
-bool VelocityLimits::setYawRateInDegrees(float yaw_rate) {
+void VelocityLimits::setYawRateInDegrees(float yaw_rate) {
     _yaw_rate = yaw_rate * M_PI / 180;
-    return true;
+    return;
 }
 
 float VelocityLimits::getHorizontalSpeed() {

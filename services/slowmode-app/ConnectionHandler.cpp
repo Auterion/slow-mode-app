@@ -1,8 +1,7 @@
 #include "ConnectionHandler.h"
 
 ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
-    _message_set(message_set),
-    _heartbeat_timeout(3000)
+    _message_set(message_set)
 {
     _runtime = std::make_unique<mav::NetworkRuntime>(_message_set, physical);
     connection = _runtime->awaitConnection(4000);

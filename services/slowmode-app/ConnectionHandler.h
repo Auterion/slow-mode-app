@@ -33,10 +33,8 @@ class ConnectionHandler {
         std::atomic<float> _focal_legth = NAN;
         std::atomic<float> _zoom_level = NAN;
         std::atomic<bool> _focal_length_set = false;
-        std::atomic<bool> _PM_exists = false;
 
-        std::chrono::milliseconds _heartbeat_timeout;
-
+        std::chrono::milliseconds _heartbeat_timeout{3000};
     public:
         std::shared_ptr<mav::Connection> connection;
         ConnectionHandler(const mav::MessageSet &message_set);
