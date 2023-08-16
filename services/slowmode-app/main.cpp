@@ -13,8 +13,7 @@ namespace fs = std::filesystem;
 
 enum Modes {
     linear = 0,
-    quadratic,
-    FOV
+    quadratic
 };
 
 std::unique_ptr<ConnectionHandler> ch;
@@ -42,7 +41,7 @@ int getScalingMode(std::string const & key) {
         }
         std::cout<<"Environment variable "<<key<<" found with value "<<val<<std::endl;
         mode = std::stoi(val);
-        if (mode != Modes::linear && mode != Modes::quadratic && mode != Modes::FOV) {
+        if (mode != Modes::linear && mode != Modes::quadratic) {
             std::cout<<"Incorrect scaling mode! Set to linear"<<std::endl;
             return(Modes::linear);
         } else {
@@ -55,7 +54,7 @@ int getScalingMode(std::string const & key) {
         std::cerr << e.what() << '\n';
     }
     
-    return(Modes::FOV);
+    return(Modes::linear);
 }
 
 void manualBroadcast(VelocityLimits& velocityLimits, std::unique_ptr<ConnectionHandler>& ch, char** argv) {
@@ -65,8 +64,10 @@ void manualBroadcast(VelocityLimits& velocityLimits, std::unique_ptr<ConnectionH
     velocityLimits.setYawRateInDegrees(std::stof(argv[3]));
 
     while(!ch->shouldExit()) {
+        ch->sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 }
 
 int main(int argc, char** argv) {
@@ -77,7 +78,6 @@ int main(int argc, char** argv) {
     std::string path = fs::current_path().string() + "/mavlink/auterion.xml";
     auto message_set = mav::MessageSet(path);
     float standard_focal_length = 24.0f; //A7R
-    float standard_frame_dim = 43.9f; //A7R
     float max_yaw_rate_with_camera = 45.0f; //deg/s
     float yaw_rate_multiplicator = 1.0f;
 
@@ -103,6 +103,8 @@ int main(int argc, char** argv) {
     std::cout<<"Yaw rate multiplicator: "<<yaw_rate_multiplicator<<std::endl;
     
     ch = std::make_unique<ConnectionHandler>(message_set);
+    VelocityLimits velocityLimits(NAN, NAN, max_yaw_rate_with_camera, standard_focal_length, 
+                                    yaw_rate_multiplicator);
 
     // Manual assignments of velocity limits if 3 arguments are passed
     if (argc == 4) {
@@ -116,9 +118,7 @@ int main(int argc, char** argv) {
         } else {
             velocityLimits.setYawRateInDegrees(NAN);
         }
-        velocityLimits.setYawRate(velocityLimits.getYawRate() * yaw_rate_multiplicator);
-        auto message = velocityLimits.getMessage();
-        ch.connection->send(message);
+        ch->sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }

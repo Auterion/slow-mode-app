@@ -2,8 +2,7 @@
 #define VELOCITYLIMITS_H
 
 #include <cmath>
-#include "mav/MessageSet.h"
-#include "ConnectionHandler.h"
+#include <iostream>
 
 class VelocityLimits {
     private:
@@ -14,18 +13,16 @@ class VelocityLimits {
         float _standard_focal_length;
         float _standard_frame_dim;
         float _standard_fov;
-        const mav::MessageSet &_message_set;
+        float _yaw_rate_multiplicator;
 
         float _computeLinearScale(float focal_length, float zoom_level);
         float _computeQuadraticScale(float focal_length, float zoom_level);
-        float _computeFOVScale(float focal_length, float zoom_level);
 
     public:
-        VelocityLimits(const mav::MessageSet &message_set, float horizontal_speed, float vertical_speed, float yaw_rate,
-                        float standard_focal_length, float standard_frame_dim);
-        ~VelocityLimits();
+        VelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate,
+                        float standard_focal_length, float yaw_rate_multiplicator);
 
-        void computeYawRate(float focal_length, float standard_focal_length, float zoom_level, int mode);
+        void computeAndUpdateYawRate(float focal_length, float standard_focal_length, float zoom_level, int mode);
         void setHorizontalSpeed(float horizontal_speed);
         void setVerticalSpeed(float vertical_speed);
         void setYawRate(float yaw_rate);
@@ -34,7 +31,6 @@ class VelocityLimits {
         float getHorizontalSpeed();
         float getVerticalSpeed();
         float getYawRate();
-        mav::Message getMessage();
 };
 
 #endif // VELOCITYLIMITS_H

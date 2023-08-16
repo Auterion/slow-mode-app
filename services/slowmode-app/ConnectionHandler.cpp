@@ -4,14 +4,12 @@ ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
     _message_set(message_set)
 {
     _runtime = std::make_unique<mav::NetworkRuntime>(_message_set, physical);
-    connection = _runtime->awaitConnection(4000);
+    _connection = _runtime->awaitConnection(4000);
     std::cout<<"Connected!" << std::endl;
 
     _initPMRequest();
     _PM_thread = std::thread(&ConnectionHandler::_handlePM, this);
-    _PM_thread.detach();
     _PM_heartbeat_thread = std::thread(&ConnectionHandler::_monitorPMHeartbeat, this);
-    _PM_heartbeat_thread.detach();
 }
 
 ConnectionHandler::~ConnectionHandler() {
@@ -35,11 +33,11 @@ void ConnectionHandler::_handlePM() {
             // Reqeuest camera information to get the focal length
             (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_INFORMATION");
             (*_PM_request)["target_component"] = static_cast<int>(_target_component);
-            auto expectation = connection->expect("CAMERA_INFORMATION");
-            connection->send(*_PM_request);
+            auto expectation = _connection->expect("CAMERA_INFORMATION");
+            _connection->send(*_PM_request);
             try
             {
-                auto res = connection->receive(expectation, 1000);
+                auto res = _connection->receive(expectation, 1000);
                 std::cout << "Received camera focal length: " << res["focal_length"].as<float>() << std::endl;
                 _focal_legth = res["focal_length"].as<float>();
                 _focal_length_set = true;
@@ -53,13 +51,13 @@ void ConnectionHandler::_handlePM() {
 
         // Request camera settings first and then monitor changes
         (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_SETTINGS");
-        connection->send(*_PM_request);
+        _connection->send(*_PM_request);
         while (!shouldExit() && pmExists() && _focal_length_set) {
             // Monitor camera settings changes
-            auto expectation = connection->expect("CAMERA_SETTINGS");
+            auto expectation = _connection->expect("CAMERA_SETTINGS");
             try
             {
-                auto res = connection->receive(expectation, 1000);
+                auto res = _connection->receive(expectation, 1000);
                 std::cout<<"Received camera zoom level:" << res["zoomLevel"].as<float>() << std::endl;
                 _zoom_level = res["zoomLevel"].as<float>();
             }
@@ -77,10 +75,10 @@ void ConnectionHandler::_monitorPMHeartbeat() {
     auto last_pm_heartbeat = std::chrono::system_clock::now();
 
     while(!shouldExit()) {
-        auto expectation = connection->expect("HEARTBEAT");
+        auto expectation = _connection->expect("HEARTBEAT");
         try
         {
-            auto res = connection->receive(expectation, 1000);
+            auto res = _connection->receive(expectation, 1000);
             int component_id = static_cast<int>(res.header().componentId());
             if (component_id >= _min_max_target_search.first && component_id <= _min_max_target_search.second) {
                 if (!pmExists()) {
@@ -115,6 +113,10 @@ bool ConnectionHandler::_initPMRequest() {
     return true;
 }
 
-std::shared_ptr<mav::Message> ConnectionHandler::getPMRequest() {
-    return _PM_request;
+void ConnectionHandler::sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate) {
+    auto message = _message_set.create("VELOCITY_LIMITS");
+    message["horizontal_velocity"] = horizontal_speed;
+    message["vertical_velocity"] = vertical_speed;
+    message["yaw_rate"] = yaw_rate;
+    _connection->send(message);
 }
