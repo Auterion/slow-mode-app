@@ -17,6 +17,12 @@ enum Modes {
     FOV
 };
 
+std::unique_ptr<ConnectionHandler> ch;
+
+void signal_handler(int signal) {
+    ch->close();
+}
+
 std::string getEnvVar(std::string const & key) {
     const char * val = getenv(key.c_str());
     if (val == NULL) {
@@ -52,21 +58,21 @@ int getScalingMode(std::string const & key) {
     return(Modes::FOV);
 }
 
-void manualBroadcast(VelocityLimits& velocityLimits, ConnectionHandler& ch, char** argv) {
+void manualBroadcast(VelocityLimits& velocityLimits, std::unique_ptr<ConnectionHandler>& ch, char** argv) {
     std::cout<<"Manual velocity limits"<<std::endl;
     velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
     velocityLimits.setVerticalSpeed(std::stof(argv[2]));
     velocityLimits.setYawRateInDegrees(std::stof(argv[3]));
 
-    while(true) {
-        auto message = velocityLimits.getMessage();
-        ch.connection->send(message);
-
+    while(!ch->shouldExit()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 
 int main(int argc, char** argv) {
+    std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
+
     std::cout << "Slow mode app" << std::endl;
     std::string path = fs::current_path().string() + "/mavlink/auterion.xml";
     auto message_set = mav::MessageSet(path);
@@ -96,8 +102,7 @@ int main(int argc, char** argv) {
     std::cout<<"Max yaw rate: "<<max_yaw_rate_with_camera<<std::endl;
     std::cout<<"Yaw rate multiplicator: "<<yaw_rate_multiplicator<<std::endl;
     
-    ConnectionHandler ch(message_set);
-    VelocityLimits velocityLimits(message_set, NAN, NAN, max_yaw_rate_with_camera, standard_focal_length, standard_frame_dim);
+    ch = std::make_unique<ConnectionHandler>(message_set);
 
     // Manual assignments of velocity limits if 3 arguments are passed
     if (argc == 4) {
@@ -105,9 +110,9 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    while(true) {
-        if (ch.pmExists()) {
-            velocityLimits.computeYawRate(ch.getFocalLength(), ch.getZoomLevel(), standard_focal_length, mode);
+    while(!ch->shouldExit()) {
+        if (ch->pmExists()) {
+            velocityLimits.computeAndUpdateYawRate(ch->getFocalLength(), ch->getZoomLevel(), standard_focal_length, mode);
         } else {
             velocityLimits.setYawRateInDegrees(NAN);
         }
@@ -117,5 +122,7 @@ int main(int argc, char** argv) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+    // Wait for threads to finish
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     return 0;
 }

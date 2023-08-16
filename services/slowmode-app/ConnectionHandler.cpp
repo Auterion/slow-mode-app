@@ -15,12 +15,14 @@ ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
 }
 
 ConnectionHandler::~ConnectionHandler() {
+    _PM_thread.join();
+    _PM_heartbeat_thread.join();
 }
 
 void ConnectionHandler::_handlePM() {
     std::cout<<"Starting Payload Manager handler thread..." << std::endl;
 
-    while(true) {
+    while(!shouldExit()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         // Check if Payload Manager exists
@@ -52,7 +54,7 @@ void ConnectionHandler::_handlePM() {
         // Request camera settings first and then monitor changes
         (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_SETTINGS");
         connection->send(*_PM_request);
-        while (pmExists() && _focal_length_set) {
+        while (!shouldExit() && pmExists() && _focal_length_set) {
             // Monitor camera settings changes
             auto expectation = connection->expect("CAMERA_SETTINGS");
             try
@@ -74,7 +76,7 @@ void ConnectionHandler::_monitorPMHeartbeat() {
     std::cout<<"Starting Payload Manager heartbeat monitor..." << std::endl;
     auto last_pm_heartbeat = std::chrono::system_clock::now();
 
-    while(true) {
+    while(!shouldExit()) {
         auto expectation = connection->expect("HEARTBEAT");
         try
         {

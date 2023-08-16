@@ -24,8 +24,6 @@ class ConnectionHandler {
         std::shared_ptr<mav::NetworkRuntime> _runtime;
 
         std::atomic<int> _target_component = -1; // target component of the PM
-        // Looks for the target component of the PM 100-106
-        int _findTargetComponent();
         void _handlePM();
         void _monitorPMHeartbeat();
         bool _initPMRequest();
@@ -33,6 +31,7 @@ class ConnectionHandler {
         std::atomic<float> _focal_legth = NAN;
         std::atomic<float> _zoom_level = NAN;
         std::atomic<bool> _focal_length_set = false;
+        std::atomic<bool> _should_exit = false;
 
         std::chrono::milliseconds _heartbeat_timeout{3000};
     public:
@@ -43,6 +42,7 @@ class ConnectionHandler {
         float getFocalLength                () const {return _focal_legth;};
         float getZoomLevel                  () const {return _zoom_level;};
         bool pmExists                       () const {return _target_component == -1 ? false : true;};
+        bool shouldExit                     () const {return _should_exit;};
 };
 
 #endif // CONNECTIONHANDLER_H
