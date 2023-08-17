@@ -44,9 +44,8 @@ class ConnectionHandler {
         void sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate);
         float getFocalLength                () const {return _focal_legth;};
         float getZoomLevel                  () const {return _zoom_level;};
-        bool pmExists                       () const {return _target_component == -1;};
+        bool pmExists                       () const {return _target_component != -1;};
         bool shouldExit                     () const {return _should_exit;};
-        void close                          ()       {_should_exit = true;};
 };
 
 #endif // CONNECTIONHANDLER_H

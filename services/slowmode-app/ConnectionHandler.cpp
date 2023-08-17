@@ -5,6 +5,7 @@ ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
 {
     _runtime = std::make_unique<mav::NetworkRuntime>(_message_set, physical);
     _connection = _runtime->awaitConnection(4000);
+    // Handle connection timeout
     SPDLOG_INFO("Connected!");
 
     _initPMRequest();
@@ -13,6 +14,7 @@ ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
 }
 
 ConnectionHandler::~ConnectionHandler() {
+    _should_exit = true;
     _PM_thread.join();
     _PM_heartbeat_thread.join();
 }
@@ -63,8 +65,9 @@ void ConnectionHandler::_handlePM() {
             }
             catch(const std::exception& e)
             {
-                if (std::string(e.what()) != "Expected message timed out")
+                if (std::string(e.what()) != "Expected message timed out") {
                     SPDLOG_ERROR(e.what());
+                }
             }
         }
     }
@@ -91,7 +94,9 @@ void ConnectionHandler::_monitorPMHeartbeat() {
         }
         catch(const std::exception& e)
         {
-            std::cerr << e.what() << '\n';
+            if (std::string(e.what()) != "Expected message timed out") {
+                SPDLOG_ERROR(e.what());
+            }
         }
         if (pmExists() && std::chrono::system_clock::now() - last_pm_heartbeat > _heartbeat_timeout) {
             SPDLOG_INFO("Payload Manager timeout!");

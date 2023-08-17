@@ -14,10 +14,10 @@
 
 namespace fs = std::filesystem;
 
-std::unique_ptr<ConnectionHandler> ch;
+std::atomic<bool> should_exit(false);
 
 void signal_handler(int signal) {
-    ch->close();
+    should_exit = true;
 }
 
 std::string getEnvVar(std::string const & key) {
@@ -30,17 +30,17 @@ std::string getEnvVar(std::string const & key) {
     return val;
 }
 
-void manualBroadcast(VelocityLimits& velocityLimits, std::unique_ptr<ConnectionHandler>& ch, char** argv) {
+void manualBroadcast(VelocityLimits& velocityLimits, ConnectionHandler& ch, char** argv) {
     SPDLOG_INFO("Manual velocity limits");
     velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
     velocityLimits.setVerticalSpeed(std::stof(argv[2]));
     velocityLimits.setYawRateInDegrees(std::stof(argv[3]));
 
-    while(!ch->shouldExit()) {
-        ch->sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
+    while(!should_exit) {
+        ch.sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    return;
 }
 
 int main(int argc, char** argv) {
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
         yaw_rate_multiplicator = std::stof(getEnvVar("YAW_RATE_MULTIPLICATOR"));
     }
     catch (const std::invalid_argument& e) {
-        std::cerr << e.what();
+        SPDLOG_ERROR(e.what());
         yaw_rate_multiplicator = 1.0f;
     }
 
@@ -69,14 +69,17 @@ int main(int argc, char** argv) {
         max_yaw_rate_with_camera = std::stof(getEnvVar("MAX_YAW_RATE"));
     }
     catch (const std::invalid_argument& e) {
-        std::cerr << e.what();
+        SPDLOG_ERROR(e.what());
         max_yaw_rate_with_camera = 45.0f;
     }
 
     SPDLOG_INFO("Max yaw rate: {}", max_yaw_rate_with_camera);
     SPDLOG_INFO("Yaw rate multiplicator: {}", yaw_rate_multiplicator);
     
-    ch = std::make_unique<ConnectionHandler>(message_set);
+    SPDLOG_INFO("Starting connection handler...");
+
+    ConnectionHandler ch(message_set);
+    // ch = std::make_unique<ConnectionHandler>(message_set);
     VelocityLimits velocityLimits(NAN, NAN, max_yaw_rate_with_camera, standard_focal_length, 
                                     yaw_rate_multiplicator);
 
@@ -86,17 +89,15 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    while(!ch->shouldExit()) {
-        if (ch->pmExists()) {
-            velocityLimits.computeAndUpdateYawRate(ch->getFocalLength(), ch->getZoomLevel(), standard_focal_length);
+    while(!should_exit) {
+        if (ch.pmExists()) {
+            velocityLimits.computeAndUpdateYawRate(ch.getFocalLength(), ch.getZoomLevel(), standard_focal_length);
         } else {
             velocityLimits.setYawRateInDegrees(NAN);
         }
-        ch->sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
+        ch.sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    // Wait for threads to finish
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     return 0;
 }
