@@ -18,7 +18,7 @@ VelocityLimits::VelocityLimits(float horizontal_speed, float vertical_speed, flo
 }
 
 float VelocityLimits::_computeLinearScale(float focal_length, float zoom_level) {
-    if (focal_length == 0.f || zoom_level == 0.f) {
+    if (focal_length <= 0.f || zoom_level <= 0.f) {
         SPDLOG_INFO("Invalid focal length or zoom level");
         return 1.0f;
     }
@@ -26,7 +26,7 @@ float VelocityLimits::_computeLinearScale(float focal_length, float zoom_level) 
 }
 
 float VelocityLimits::_computeQuadraticScale(float focal_length, float zoom_level) {
-    if (focal_length == 0.f || zoom_level == 0.f) {
+    if (focal_length <= 0.f || zoom_level <= 0.f) {
         SPDLOG_INFO("Invalid focal length or zoom level");
         return 1.0f;
     }
@@ -57,22 +57,18 @@ void VelocityLimits::computeAndUpdateYawRate(float focal_length, float zoom_leve
 
 void VelocityLimits::setHorizontalSpeed(float horizontal_speed) {
     _horizontal_speed = horizontal_speed;
-    return;
 }
 
 void VelocityLimits::setVerticalSpeed(float vertical_speed) {
     _vertical_speed = vertical_speed;
-    return;
 }
 
 void VelocityLimits::setYawRate(float yaw_rate) {
     _yaw_rate = yaw_rate;
-    return;
 }
 
 void VelocityLimits::setYawRateInDegrees(float yaw_rate) {
     _yaw_rate = yaw_rate * M_PI / 180;
-    return;
 }
 
 float VelocityLimits::getHorizontalSpeed() {

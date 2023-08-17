@@ -17,7 +17,6 @@ namespace fs = std::filesystem;
 std::unique_ptr<ConnectionHandler> ch;
 
 void signal_handler(int signal) {
-    SPDLOG_INFO("singla_handler");
     ch->close();
 }
 
@@ -25,6 +24,7 @@ std::string getEnvVar(std::string const & key) {
     const char * val = getenv(key.c_str());
     if (val == NULL) {
         SPDLOG_ERROR("Environment variable {} not found", key);
+        throw std::invalid_argument("Environment variable " + key + " not found \n");
     }
     SPDLOG_INFO("Environment variable {} found with value: {}", key, val);
     return val;
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     std::signal(SIGTERM, signal_handler);
 
     spdlog::cfg::load_env_levels();
-    spdlog::set_pattern("[%H:%M:%S.%e] [%^%7l%$] [%25!s:%-3#] %v");
+    spdlog::set_pattern("[%H:%M:%S.%e] [%^%7l%$] [%20!s:%-3#] %v");
     SPDLOG_INFO("Slow mode app");
     
     std::string path = fs::current_path().string() + "/mavlink/auterion.xml";
