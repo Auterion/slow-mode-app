@@ -1,6 +1,9 @@
 #include <iostream>
 #include <filesystem>
 
+#include "spdlog/spdlog.h"
+#include "spdlog/cfg/env.h"
+
 #include "mav/Network.h"
 #include "mav/TCPClient.h"
 #include "mav/UDPServer.h"
@@ -14,20 +17,21 @@ namespace fs = std::filesystem;
 std::unique_ptr<ConnectionHandler> ch;
 
 void signal_handler(int signal) {
+    SPDLOG_INFO("singla_handler");
     ch->close();
 }
 
 std::string getEnvVar(std::string const & key) {
     const char * val = getenv(key.c_str());
     if (val == NULL) {
-        throw std::invalid_argument("Environment variable " + key + " not found \n");
+        SPDLOG_ERROR("Environment variable {} not found", key);
     }
-    std::cout<<"Environment variable "<<key<<" found with value "<<val<<std::endl;
+    SPDLOG_INFO("Environment variable {} found with value: {}", key, val);
     return val;
 }
 
 void manualBroadcast(VelocityLimits& velocityLimits, std::unique_ptr<ConnectionHandler>& ch, char** argv) {
-    std::cout<<"Manual velocity limits"<<std::endl;
+    SPDLOG_INFO("Manual velocity limits");
     velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
     velocityLimits.setVerticalSpeed(std::stof(argv[2]));
     velocityLimits.setYawRateInDegrees(std::stof(argv[3]));
@@ -43,7 +47,10 @@ int main(int argc, char** argv) {
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 
-    std::cout << "Slow mode app" << std::endl;
+    spdlog::cfg::load_env_levels();
+    spdlog::set_pattern("[%H:%M:%S.%e] [%^%7l%$] [%25!s:%-3#] %v");
+    SPDLOG_INFO("Slow mode app");
+    
     std::string path = fs::current_path().string() + "/mavlink/auterion.xml";
     auto message_set = mav::MessageSet(path);
     float standard_focal_length = 24.0f; //A7R
@@ -66,8 +73,8 @@ int main(int argc, char** argv) {
         max_yaw_rate_with_camera = 45.0f;
     }
 
-    std::cout<<"Max yaw rate: "<<max_yaw_rate_with_camera<<std::endl;
-    std::cout<<"Yaw rate multiplicator: "<<yaw_rate_multiplicator<<std::endl;
+    SPDLOG_INFO("Max yaw rate: {}", max_yaw_rate_with_camera);
+    SPDLOG_INFO("Yaw rate multiplicator: {}", yaw_rate_multiplicator);
     
     ch = std::make_unique<ConnectionHandler>(message_set);
     VelocityLimits velocityLimits(NAN, NAN, max_yaw_rate_with_camera, standard_focal_length, 

@@ -7,6 +7,9 @@
 
 #include "mav/TCPClient.h"
 #include "mav/UDPServer.h"
+
+#include "spdlog/spdlog.h"
+
 #include <cmath>
 
 class ConnectionHandler {

@@ -1,6 +1,8 @@
 #ifndef VELOCITYLIMITS_H
 #define VELOCITYLIMITS_H
 
+#include "spdlog/spdlog.h"
+
 #include <cmath>
 #include <iostream>
 

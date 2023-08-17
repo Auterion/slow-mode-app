@@ -13,13 +13,13 @@ VelocityLimits::VelocityLimits(float horizontal_speed, float vertical_speed, flo
         _standard_focal_length;
     } else {
         _standard_focal_length = NAN;
-        std::cout<<"Invalid standard focal length"<<std::endl;
+        SPDLOG_INFO("Invalid standard focal length");
     }
 }
 
 float VelocityLimits::_computeLinearScale(float focal_length, float zoom_level) {
     if (focal_length == 0.f || zoom_level == 0.f) {
-        std::cout<<"Invalid focal length or zoom level"<<std::endl;
+        SPDLOG_INFO("Invalid focal length or zoom level");
         return 1.0f;
     }
     return _standard_focal_length / (focal_length * zoom_level);
@@ -27,7 +27,7 @@ float VelocityLimits::_computeLinearScale(float focal_length, float zoom_level) 
 
 float VelocityLimits::_computeQuadraticScale(float focal_length, float zoom_level) {
     if (focal_length == 0.f || zoom_level == 0.f) {
-        std::cout<<"Invalid focal length or zoom level"<<std::endl;
+        SPDLOG_INFO("Invalid focal length or zoom level");
         return 1.0f;
     }
     return pow(_computeLinearScale(focal_length, zoom_level), 2);
