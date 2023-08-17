@@ -11,11 +11,6 @@
 
 namespace fs = std::filesystem;
 
-enum Modes {
-    linear = 0,
-    quadratic
-};
-
 std::unique_ptr<ConnectionHandler> ch;
 
 void signal_handler(int signal) {
@@ -29,32 +24,6 @@ std::string getEnvVar(std::string const & key) {
     }
     std::cout<<"Environment variable "<<key<<" found with value "<<val<<std::endl;
     return val;
-}
-
-int getScalingMode(std::string const & key) {
-    const char * val = getenv(key.c_str());
-    int mode;
-    try
-    {
-        if (val == NULL) {
-            throw std::invalid_argument("Environment variable " + key + " not found \n");
-        }
-        std::cout<<"Environment variable "<<key<<" found with value "<<val<<std::endl;
-        mode = std::stoi(val);
-        if (mode != Modes::linear && mode != Modes::quadratic) {
-            std::cout<<"Incorrect scaling mode! Set to linear"<<std::endl;
-            return(Modes::linear);
-        } else {
-            std::cout<<"Scaling mode: "<<mode<<std::endl;
-            return(mode);
-        }
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-    
-    return(Modes::linear);
 }
 
 void manualBroadcast(VelocityLimits& velocityLimits, std::unique_ptr<ConnectionHandler>& ch, char** argv) {
@@ -97,8 +66,6 @@ int main(int argc, char** argv) {
         max_yaw_rate_with_camera = 45.0f;
     }
 
-    int mode = getScalingMode("SCALING_MODE");
-    std::cout<<"Scaling mode: "<<mode<<std::endl;
     std::cout<<"Max yaw rate: "<<max_yaw_rate_with_camera<<std::endl;
     std::cout<<"Yaw rate multiplicator: "<<yaw_rate_multiplicator<<std::endl;
     
@@ -114,7 +81,7 @@ int main(int argc, char** argv) {
 
     while(!ch->shouldExit()) {
         if (ch->pmExists()) {
-            velocityLimits.computeAndUpdateYawRate(ch->getFocalLength(), ch->getZoomLevel(), standard_focal_length, mode);
+            velocityLimits.computeAndUpdateYawRate(ch->getFocalLength(), ch->getZoomLevel(), standard_focal_length);
         } else {
             velocityLimits.setYawRateInDegrees(NAN);
         }

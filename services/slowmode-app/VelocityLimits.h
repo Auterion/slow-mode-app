@@ -22,7 +22,7 @@ class VelocityLimits {
         VelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate,
                         float standard_focal_length, float yaw_rate_multiplicator);
 
-        void computeAndUpdateYawRate(float focal_length, float standard_focal_length, float zoom_level, int mode);
+        void computeAndUpdateYawRate(float focal_length, float standard_focal_length, float zoom_level, int mode = 0);
         void setHorizontalSpeed(float horizontal_speed);
         void setVerticalSpeed(float vertical_speed);
         void setYawRate(float yaw_rate);
