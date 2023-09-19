@@ -4,7 +4,7 @@ auterion-api-version: 1
 auterion-app-base: v2
 
 app-name: slowmode-app
-app-version: 0.1.0
+app-version: 1.0.0-alpha3
 target-platform: skynode
 app-author: com.auterion
 
