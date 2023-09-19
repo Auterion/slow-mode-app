@@ -1,4 +1,4 @@
-FROM auterion/app-base:v0
+FROM auterion/app-base:v2
 
 COPY . ./app/
 

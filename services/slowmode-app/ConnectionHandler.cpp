@@ -4,84 +4,111 @@ ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
     _message_set(message_set)
 {
     _runtime = std::make_unique<mav::NetworkRuntime>(_message_set, physical);
-    connection = _runtime->awaitConnection(4000);
-    std::cout<<"Connected!" << std::endl;
+    _connection = _runtime->awaitConnection(4000);
+    // Handle connection timeout
+    SPDLOG_INFO("Connected!");
 
-    initPMRequest();
+    _initPMRequest();
     _PM_thread = std::thread(&ConnectionHandler::_handlePM, this);
-    _PM_thread.detach();
+    _PM_heartbeat_thread = std::thread(&ConnectionHandler::_monitorPMHeartbeat, this);
 }
 
 ConnectionHandler::~ConnectionHandler() {
-}
-
-int ConnectionHandler::_findTargetComponent() {
-    int curr_target = _min_max_target_search.first;
-    auto request = getPMRequest();
-    (*_PM_request)["command"] = 512;
-    (*_PM_request)["target_component"] = _min_max_target_search.first;
-    auto expectation = connection->expect("COMMAND_ACK");
-    std::cout << "Looking for Payload Manager's target component... " << std::endl;
-
-    while (true) {
-        (*_PM_request)["target_component"] = curr_target;
-        connection->send(*request);
-        try
-        {
-            auto res = connection->receive(expectation, 500);
-            std::cout << "Found Payload Manager on: " << curr_target << std::endl;
-            return curr_target;
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << e.what() << '\n';
-        }
-        curr_target >= _min_max_target_search.second ? curr_target = _min_max_target_search.first : curr_target++;
-    }
+    _should_exit = true;
+    _PM_thread.join();
+    _PM_heartbeat_thread.join();
 }
 
 void ConnectionHandler::_handlePM() {
-    std::cout<<"Starting PM thread..." << std::endl;
-    _target_component = _findTargetComponent();
-    (*_PM_request)["target_component"] = _target_component;
+    SPDLOG_INFO("Starting Payload Manager handler thread...");
 
-    // Reqeuest camera information first to get the focal length
-    (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_INFORMATION");
-    auto expectation = connection->expect("CAMERA_INFORMATION");
-    connection->send(*_PM_request);
-    try
-    {
-        auto res = connection->receive(expectation, 1000);
-        std::cout << "Received camera focal length: " << res["focal_length"].as<float>() << std::endl;
-        _focal_legth = res["focal_length"].as<float>();
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
+    while(!shouldExit()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    // Request camera settings
-    (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_SETTINGS");
-    connection->send(*_PM_request);
-
-    while(true) {
-        // Monitor camera settings changes
-        auto expectation = connection->expect("CAMERA_SETTINGS");
-        try
-        {
-            auto res = connection->receive(expectation, 1000);
-            std::cout<<"Received camera zoom level:" << res["zoomLevel"].as<float>() << std::endl;
-            _zoom_level = res["zoomLevel"].as<float>();
+        // Check if Payload Manager exists
+        if (!pmExists()) {
+            continue;
         }
-        catch(const std::exception& e)
-        {
-            if (std::string(e.what()) != "Expected message timed out")
-                std::cerr << e.what() << '\n';
+
+        // Check if focal length is set. If not yet, request it
+        if (!_focal_length_set) {
+            // Reqeuest camera information to get the focal length
+            (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_INFORMATION");
+            (*_PM_request)["target_component"] = static_cast<int>(_target_component);
+            auto expectation = _connection->expect("CAMERA_INFORMATION");
+            _connection->send(*_PM_request);
+            try
+            {
+                auto res = _connection->receive(expectation, 1000);
+                SPDLOG_INFO("Received camera focal length: {}", res["focal_length"].as<float>());
+                _focal_legth = res["focal_length"].as<float>();
+                _focal_length_set = true;
+            }
+            catch(const std::exception& e)
+            {
+                SPDLOG_ERROR(e.what());
+                continue;
+            }
+        }
+
+        // Request camera settings first and then monitor changes
+        (*_PM_request)["param1"] = _message_set.idForMessage("CAMERA_SETTINGS");
+        _connection->send(*_PM_request);
+        while (!shouldExit() && pmExists() && _focal_length_set) {
+            // Monitor camera settings changes
+            auto expectation = _connection->expect("CAMERA_SETTINGS");
+            try
+            {
+                auto res = _connection->receive(expectation, 1000);
+                SPDLOG_INFO("Received camera zoom level: {}", res["zoomLevel"].as<float>());
+                _zoom_level = res["zoomLevel"].as<float>();
+            }
+            catch(const std::exception& e)
+            {
+                if (std::string(e.what()) != "Expected message timed out") {
+                    SPDLOG_ERROR(e.what());
+                }
+            }
         }
     }
 }
 
-bool ConnectionHandler::initPMRequest() {
+void ConnectionHandler::_monitorPMHeartbeat() {
+    SPDLOG_INFO("Starting Payload Manager heartbeat monitor...");
+    auto last_pm_heartbeat = std::chrono::system_clock::now();
+
+    while(!shouldExit()) {
+        auto expectation = _connection->expect("HEARTBEAT");
+        try
+        {
+            auto res = _connection->receive(expectation, 1000);
+            int component_id = static_cast<int>(res.header().componentId());
+            if (component_id >= _min_max_target_search.first && component_id <= _min_max_target_search.second) {
+                if (!pmExists()) {
+                    SPDLOG_INFO("Payload Manager found!");
+                    SPDLOG_INFO("Received Payload Manager heartbeat from component id: {}", component_id);
+                    _target_component = component_id;
+                }
+                last_pm_heartbeat = std::chrono::system_clock::now();
+            }
+        }
+        catch(const std::exception& e)
+        {
+            if (std::string(e.what()) != "Expected message timed out") {
+                SPDLOG_ERROR(e.what());
+            }
+        }
+        if (pmExists() && std::chrono::system_clock::now() - last_pm_heartbeat > _heartbeat_timeout) {
+            SPDLOG_INFO("Payload Manager timeout!");
+            _focal_length_set = false;
+            _focal_legth = NAN;
+            _zoom_level = NAN;
+            _target_component = -1;
+        }
+    }
+}
+
+bool ConnectionHandler::_initPMRequest() {
     _PM_request = std::make_shared<mav::Message>(_message_set.create("COMMAND_LONG"));
     (*_PM_request)["target_system"] = 1;
     (*_PM_request)["target_component"] = 100;
@@ -91,10 +118,10 @@ bool ConnectionHandler::initPMRequest() {
     return true;
 }
 
-std::shared_ptr<mav::Message> ConnectionHandler::getPMRequest() {
-    return _PM_request;
-}
-
-bool ConnectionHandler::sendRequest(const mav::Message &request) {
-    return true;
+void ConnectionHandler::sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate) {
+    auto message = _message_set.create("VELOCITY_LIMITS");
+    message["horizontal_velocity"] = horizontal_speed;
+    message["vertical_velocity"] = vertical_speed;
+    message["yaw_rate"] = yaw_rate;
+    _connection->send(message);
 }

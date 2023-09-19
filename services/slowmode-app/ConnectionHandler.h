@@ -7,6 +7,9 @@
 
 #include "mav/TCPClient.h"
 #include "mav/UDPServer.h"
+
+#include "spdlog/spdlog.h"
+
 #include <cmath>
 
 class ConnectionHandler {
@@ -19,37 +22,30 @@ class ConnectionHandler {
         #endif
 
         std::pair<int, int> _min_max_target_search = {100,106};
-        std::thread _PM_thread;
+        std::thread _PM_thread, _PM_heartbeat_thread;
         const mav::MessageSet &_message_set;
         std::shared_ptr<mav::NetworkRuntime> _runtime;
 
-        int _target_component; // target component of the PM
-        // Looks for the target component of the PM 100-106
-        int _findTargetComponent();
+        std::atomic<int> _target_component = -1; // target component of the PM
         void _handlePM();
+        void _monitorPMHeartbeat();
+        bool _initPMRequest();
 
         std::atomic<float> _focal_legth = NAN;
         std::atomic<float> _zoom_level = NAN;
-        float _horizontal_speed = NAN;
-        float _vertical_speed = NAN;
-        float _yaw_rate = NAN;
+        std::atomic<bool> _focal_length_set = false;
+        std::atomic<bool> _should_exit = false;
 
+        std::chrono::milliseconds _heartbeat_timeout{3000};
+        std::shared_ptr<mav::Connection> _connection;
     public:
-        std::shared_ptr<mav::Connection> connection;
         ConnectionHandler(const mav::MessageSet &message_set);
         ~ConnectionHandler();
-        bool initPMRequest();
-        std::shared_ptr<mav::Message> getPMRequest();
-        bool sendRequest(const mav::Message &request);
+        void sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate);
         float getFocalLength                () const {return _focal_legth;};
         float getZoomLevel                  () const {return _zoom_level;};
-
-        float getHorizontalSpeed            () const {return _horizontal_speed;};
-        float getVerticalSpeed              () const {return _vertical_speed;};
-        float getYawRate                    () const {return _yaw_rate;};
-        void setHorizontalSpeed             (float horizontal_speed) {_horizontal_speed = horizontal_speed;};
-        void setVerticalSpeed               (float vertical_speed) {_vertical_speed = vertical_speed;};
-        void setYawRate                     (float yaw_rate) {_yaw_rate = yaw_rate;};
+        bool pmExists                       () const {return _target_component != -1;};
+        bool shouldExit                     () const {return _should_exit;};
 };
 
 #endif // CONNECTIONHANDLER_H

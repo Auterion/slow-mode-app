@@ -7,15 +7,19 @@ project(slowmode-app
         DESCRIPTION "An application that limits the velocities setpoint of the PX4 autopilot"
         LANGUAGES CXX)
 
-message("-----CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
-message("-----CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
+message("-- CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
+message("-- CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
 
-add_executable(slowmode-app-udp main.cpp VelocityLimits.cpp ConnectionHandler.cpp)
-target_compile_definitions(slowmode-app-udp PRIVATE UDP)
-target_include_directories(slowmode-app-udp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libs/libmav/include)
+add_subdirectory("${CMAKE_SOURCE_DIR}/libs/spdlog")
 
-add_executable(slowmode-app-tcp main.cpp VelocityLimits.cpp ConnectionHandler.cpp)
-target_include_directories(slowmode-app-tcp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libs/libmav/include)
+add_executable(${PROJECT_NAME}-udp main.cpp VelocityLimits.cpp ConnectionHandler.cpp)
+target_compile_definitions(${PROJECT_NAME}-udp PRIVATE UDP)
+target_include_directories(${PROJECT_NAME}-udp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libs/libmav/include)
+target_link_libraries(${PROJECT_NAME}-udp spdlog::spdlog)
+
+add_executable(${PROJECT_NAME}-tcp main.cpp VelocityLimits.cpp ConnectionHandler.cpp)
+target_include_directories(${PROJECT_NAME}-tcp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libs/libmav/include)
+target_link_libraries(${PROJECT_NAME}-tcp spdlog::spdlog)
 
 # copy mavlink message definitions to the build directory
 file(GLOB MAVLINK_XML ${CMAKE_CURRENT_SOURCE_DIR}/libs/mavlink/message_definitions/v1.0/*.xml)
