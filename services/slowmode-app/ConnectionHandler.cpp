@@ -1,7 +1,6 @@
 #include "ConnectionHandler.h"
 
-ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
-    _message_set(message_set)
+ConnectionHandler::ConnectionHandler(const mav::MessageSet& message_set) : _message_set(message_set)
 {
     _runtime = std::make_unique<mav::NetworkRuntime>(_message_set, physical);
     _connection = _runtime->awaitConnection(4000);
@@ -13,16 +12,18 @@ ConnectionHandler::ConnectionHandler(const mav::MessageSet &message_set) :
     _PM_heartbeat_thread = std::thread(&ConnectionHandler::_monitorPMHeartbeat, this);
 }
 
-ConnectionHandler::~ConnectionHandler() {
+ConnectionHandler::~ConnectionHandler()
+{
     _should_exit = true;
     _PM_thread.join();
     _PM_heartbeat_thread.join();
 }
 
-void ConnectionHandler::_handlePM() {
+void ConnectionHandler::_handlePM()
+{
     SPDLOG_INFO("Starting Payload Manager handler thread...");
 
-    while(!shouldExit()) {
+    while (!shouldExit()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         // Check if Payload Manager exists
@@ -37,15 +38,12 @@ void ConnectionHandler::_handlePM() {
             (*_PM_request)["target_component"] = static_cast<int>(_target_component);
             auto expectation = _connection->expect("CAMERA_INFORMATION");
             _connection->send(*_PM_request);
-            try
-            {
+            try {
                 auto res = _connection->receive(expectation, 1000);
                 SPDLOG_INFO("Received camera focal length: {}", res["focal_length"].as<float>());
                 _focal_legth = res["focal_length"].as<float>();
                 _focal_length_set = true;
-            }
-            catch(const std::exception& e)
-            {
+            } catch (const std::exception& e) {
                 SPDLOG_ERROR(e.what());
                 continue;
             }
@@ -57,14 +55,11 @@ void ConnectionHandler::_handlePM() {
         while (!shouldExit() && pmExists() && _focal_length_set) {
             // Monitor camera settings changes
             auto expectation = _connection->expect("CAMERA_SETTINGS");
-            try
-            {
+            try {
                 auto res = _connection->receive(expectation, 1000);
                 SPDLOG_INFO("Received camera zoom level: {}", res["zoomLevel"].as<float>());
                 _zoom_level = res["zoomLevel"].as<float>();
-            }
-            catch(const std::exception& e)
-            {
+            } catch (const std::exception& e) {
                 if (std::string(e.what()) != "Expected message timed out") {
                     SPDLOG_ERROR(e.what());
                 }
@@ -73,14 +68,14 @@ void ConnectionHandler::_handlePM() {
     }
 }
 
-void ConnectionHandler::_monitorPMHeartbeat() {
+void ConnectionHandler::_monitorPMHeartbeat()
+{
     SPDLOG_INFO("Starting Payload Manager heartbeat monitor...");
     auto last_pm_heartbeat = std::chrono::system_clock::now();
 
-    while(!shouldExit()) {
+    while (!shouldExit()) {
         auto expectation = _connection->expect("HEARTBEAT");
-        try
-        {
+        try {
             auto res = _connection->receive(expectation, 1000);
             int component_id = static_cast<int>(res.header().componentId());
             if (component_id >= _min_max_target_search.first && component_id <= _min_max_target_search.second) {
@@ -91,9 +86,7 @@ void ConnectionHandler::_monitorPMHeartbeat() {
                 }
                 last_pm_heartbeat = std::chrono::system_clock::now();
             }
-        }
-        catch(const std::exception& e)
-        {
+        } catch (const std::exception& e) {
             if (std::string(e.what()) != "Expected message timed out") {
                 SPDLOG_ERROR(e.what());
             }
@@ -108,7 +101,8 @@ void ConnectionHandler::_monitorPMHeartbeat() {
     }
 }
 
-bool ConnectionHandler::_initPMRequest() {
+bool ConnectionHandler::_initPMRequest()
+{
     _PM_request = std::make_shared<mav::Message>(_message_set.create("COMMAND_LONG"));
     (*_PM_request)["target_system"] = 1;
     (*_PM_request)["target_component"] = 100;
@@ -118,7 +112,8 @@ bool ConnectionHandler::_initPMRequest() {
     return true;
 }
 
-void ConnectionHandler::sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate) {
+void ConnectionHandler::sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate)
+{
     auto message = _message_set.create("VELOCITY_LIMITS");
     message["horizontal_velocity"] = horizontal_speed;
     message["vertical_velocity"] = vertical_speed;
