@@ -5,7 +5,6 @@
 #include <restinio/all.hpp>
 #include <csignal>
 #include <iostream>
-// #include <magic_enum.hpp>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/cfg/env.h>
