@@ -12,6 +12,8 @@
 #include "ConnectionHandler.h"
 #include "VelocityLimits.h"
 
+#include "app.h"
+
 namespace fs = std::filesystem;
 
 std::atomic<bool> should_exit(false);
@@ -48,6 +50,9 @@ void manualBroadcast(VelocityLimits& velocityLimits, ConnectionHandler& ch, char
 
 int main(int argc, char** argv)
 {
+    App app;
+    app.run();
+
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 

@@ -1,13 +1,11 @@
 #pragma once
 
-// #include "ntrip_client.h"
-
 #include <string>
 #include <thread>
 #include <restinio/all.hpp>
 #include <csignal>
 #include <iostream>
-#include <magic_enum.hpp>
+// #include <magic_enum.hpp>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/cfg/env.h>

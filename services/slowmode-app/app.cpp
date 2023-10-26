@@ -4,7 +4,6 @@ std::unique_ptr<restinio::router::express_router_t<>> App::_createRouter()
 {
     auto router = std::make_unique<restinio::router::express_router_t<>>();
     router->http_get(R"(/status)", [this](auto req, auto params) {
-
         app_status_t appStatus;
         {
             // copy current state
@@ -14,8 +13,11 @@ std::unique_ptr<restinio::router::express_router_t<>> App::_createRouter()
         return req->create_response()
             .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
             .append_header(restinio::http_field::access_control_allow_origin, "*")
-            .set_body(fmt::format("{{\"status\": {}, \"status_description\": \"{}\", \"error\": \"{}\" }}", 
-                                    appStatus.code, appStatus.description, appStatus.error))
+            .set_body(fmt::format(
+                "{{\"status\": {}, \"status_description\": \"{}\", \"error\": \"{}\"}}",
+                appStatus.code,
+                appStatus.description,
+                appStatus.error))
             .done();
     });
     return router;
@@ -30,11 +32,11 @@ void App::stateCallback(app_status_code_t new_state, std::string_view descriptio
 
     switch (new_state) {
         case app_status_code_t::ERROR:
-            SPDLOG_ERROR("NtripClient Error: {}", what);
+            SPDLOG_ERROR("NtripClient Error: {}", description);
             break;
 
         default:
-            SPDLOG_INFO("NtripClient: {}", what);
+            SPDLOG_INFO("NtripClient: {}", description);
     }
 }
 
