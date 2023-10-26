@@ -14,6 +14,12 @@ services:
     build: services/slowmode-app
     ssh: false
     http:
+      /:
+        static-root: /data/webroot
+        function:
+          type: api
+          label: Slowmode App
+      
       /api:
         proxy:
           port: 8080
