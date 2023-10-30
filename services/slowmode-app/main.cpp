@@ -18,7 +18,7 @@ namespace fs = std::filesystem;
 
 std::atomic<bool> should_exit(false);
 
-void signal_handler(int signal)
+void signal_handler([[maybe_unused]] int signal)
 {
     should_exit = true;
 }
@@ -34,7 +34,7 @@ std::string getEnvVar(std::string const& key)
     return val;
 }
 
-void manualBroadcast(VelocityLimits& velocityLimits, ConnectionHandler& ch, char** argv)
+void manualBroadcast(VelocityLimits& velocityLimits, const ConnectionHandler& ch, char** argv)
 {
     SPDLOG_INFO("Manual velocity limits");
     velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
@@ -44,6 +44,25 @@ void manualBroadcast(VelocityLimits& velocityLimits, ConnectionHandler& ch, char
     while (!should_exit) {
         ch.sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+    return;
+}
+
+void constructStatusDescription(const float horizontalSpeed, const float verticalSpeed, const float yawRate, std::string& description)
+{
+    if (std::isnan(horizontalSpeed) && std::isnan(verticalSpeed) && std::isnan(yawRate)) {
+        description = "No velocity limits set";
+    } else {
+        description = fmt::format("Current limits: ");
+        if (!std::isnan(horizontalSpeed)) {
+            description += fmt::format("Horizontal speed: {:.2f}", horizontalSpeed);
+        }
+        if (!std::isnan(verticalSpeed)) {
+            description += fmt::format(" Vertical speed: {:.2f}", verticalSpeed);
+        }
+        if (!std::isnan(yawRate)) {
+            description += fmt::format(" Yaw rate: {:.2f}", yawRate);
+        }
     }
     return;
 }
@@ -82,24 +101,38 @@ int main(int argc, char** argv)
 
     SPDLOG_INFO("Max yaw rate: {}", max_yaw_rate_with_camera);
     SPDLOG_INFO("Yaw rate multiplicator: {}", yaw_rate_multiplicator);
-
     SPDLOG_INFO("Starting connection handler...");
 
     ConnectionHandler ch(message_set);
-    // ch = std::make_unique<ConnectionHandler>(message_set);
+    ch.registerStatusChangeCallback([&app](App::app_status_code_t new_state, std::string_view description, std::string_view error) {
+        app.stateCallback(new_state, description, error);
+    });
+    ch.connect();
     VelocityLimits velocityLimits(NAN, NAN, max_yaw_rate_with_camera, standard_focal_length, yaw_rate_multiplicator);
+
+    std::string description = "";
+    std::string error = "";
 
     // Manual assignments of velocity limits if 3 arguments are passed
     if (argc == 4) {
+        constructStatusDescription(
+            velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate(), description);
+        app.stateCallback(App::app_status_code_t::SUCCESS, description, error);
         manualBroadcast(velocityLimits, ch, argv);
         return 0;
     }
 
     while (!should_exit) {
+        bool updated = false;
         if (ch.pmExists()) {
-            velocityLimits.computeAndUpdateYawRate(ch.getFocalLength(), ch.getZoomLevel(), standard_focal_length);
+            updated = velocityLimits.computeAndUpdateYawRate(ch.getFocalLength(), ch.getZoomLevel());
         } else {
-            velocityLimits.setYawRateInDegrees(NAN);
+            updated = velocityLimits.setYawRateInDegrees(NAN);
+        }
+        if (updated) {
+            constructStatusDescription(
+                velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate(), description);
+            app.stateCallback(App::app_status_code_t::SUCCESS, description, error);
         }
         ch.sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
 

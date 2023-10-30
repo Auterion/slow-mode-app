@@ -1,22 +1,30 @@
 #include "ConnectionHandler.h"
 
-ConnectionHandler::ConnectionHandler(const mav::MessageSet& message_set) : _message_set(message_set)
-{
-    _runtime = std::make_unique<mav::NetworkRuntime>(_message_set, physical);
-    _connection = _runtime->awaitConnection(4000);
-    // Handle connection timeout
-    SPDLOG_INFO("Connected!");
-
-    _initPMRequest();
-    _PM_thread = std::thread(&ConnectionHandler::_handlePM, this);
-    _PM_heartbeat_thread = std::thread(&ConnectionHandler::_monitorPMHeartbeat, this);
-}
+ConnectionHandler::ConnectionHandler(const mav::MessageSet& message_set) : _message_set(message_set) {}
 
 ConnectionHandler::~ConnectionHandler()
 {
     _should_exit = true;
     _PM_thread.join();
     _PM_heartbeat_thread.join();
+}
+
+void ConnectionHandler::connect()
+{
+    changeState(App::app_status_code_t::LOADING, "Connecting...", "");
+    if (_state_change_callback) {
+        SPDLOG_INFO("Connecting...");
+        _state_change_callback(App::app_status_code_t::LOADING, "Connecting...", "");
+    }
+    _runtime = std::make_unique<mav::NetworkRuntime>(_message_set, physical);
+    _connection = _runtime->awaitConnection(4000);
+    // Handle connection timeout
+    SPDLOG_INFO("Connected!");
+    changeState(App::app_status_code_t::SUCCESS, "Connected!", "");
+
+    _initPMRequest();
+    _PM_thread = std::thread(&ConnectionHandler::_handlePM, this);
+    _PM_heartbeat_thread = std::thread(&ConnectionHandler::_monitorPMHeartbeat, this);
 }
 
 void ConnectionHandler::_handlePM()
@@ -112,11 +120,18 @@ bool ConnectionHandler::_initPMRequest()
     return true;
 }
 
-void ConnectionHandler::sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate)
+void ConnectionHandler::sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate) const
 {
     auto message = _message_set.create("VELOCITY_LIMITS");
     message["horizontal_velocity"] = horizontal_speed;
     message["vertical_velocity"] = vertical_speed;
     message["yaw_rate"] = yaw_rate;
     _connection->send(message);
+}
+
+void ConnectionHandler::changeState(App::app_status_code_t new_state, std::string_view description, std::string_view error) const
+{
+    if (_state_change_callback) {
+        _state_change_callback(new_state, description, error);
+    }
 }

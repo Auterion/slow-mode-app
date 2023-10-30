@@ -12,6 +12,11 @@
 
 #include <cmath>
 
+#include "app.h"
+#include <functional>
+
+using StateChangeFunction = std::function<void(App::app_status_code_t new_state, std::string_view description, std::string_view error)>;
+
 class ConnectionHandler {
 private:
     std::shared_ptr<mav::Message> _PM_request, _PM_request_CAM_SETTINGS;
@@ -38,11 +43,18 @@ private:
 
     std::chrono::milliseconds _heartbeat_timeout{3000};
     std::shared_ptr<mav::Connection> _connection;
+    StateChangeFunction _state_change_callback;
+    void changeState(App::app_status_code_t new_state, std::string_view description, std::string_view error) const;
 
 public:
-    ConnectionHandler(const mav::MessageSet& message_set);
+    explicit ConnectionHandler(const mav::MessageSet& message_set);
     ~ConnectionHandler();
-    void sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate);
+    void connect();
+    void sendVelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate) const;
+    void registerStatusChangeCallback(StateChangeFunction const& f)
+    {
+        _state_change_callback = f;
+    };
     float getFocalLength() const
     {
         return _focal_legth;
