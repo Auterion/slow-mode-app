@@ -28,7 +28,6 @@ void App::stateCallback(app_status_code_t new_state, std::string_view descriptio
     _appStatus.error = error;
 
     if (new_state == app_status_code_t::ERROR) {
-        // case app_status_code_t::ERROR:
         SPDLOG_ERROR("Slowmode App Error: {}", description);
     } else {
         SPDLOG_INFO("Slowmode App: {}", description);

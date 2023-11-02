@@ -58,7 +58,7 @@ bool VelocityLimits::computeAndUpdateYawRate(float focal_length, float zoom_leve
 
 bool VelocityLimits::setHorizontalSpeed(float horizontal_speed)
 {
-    if (_horizontal_speed != horizontal_speed) {
+    if (abs(_horizontal_speed - horizontal_speed) > 1e-5) {
         _horizontal_speed = horizontal_speed;
         return true;
     }
@@ -67,7 +67,7 @@ bool VelocityLimits::setHorizontalSpeed(float horizontal_speed)
 
 bool VelocityLimits::setVerticalSpeed(float vertical_speed)
 {
-    if (_vertical_speed != vertical_speed) {
+    if (abs(_vertical_speed - vertical_speed) > 1e-5) {
         _vertical_speed = vertical_speed;
         return true;
     }
@@ -76,7 +76,7 @@ bool VelocityLimits::setVerticalSpeed(float vertical_speed)
 
 bool VelocityLimits::setYawRate(float yaw_rate)
 {
-    if (_yaw_rate != yaw_rate) {
+    if (abs(_yaw_rate - yaw_rate) > 1e-5) {
         _yaw_rate = yaw_rate;
         return true;
     }

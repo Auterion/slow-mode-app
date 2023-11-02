@@ -53,7 +53,7 @@ void constructStatusDescription(const float horizontalSpeed, const float vertica
     if (std::isnan(horizontalSpeed) && std::isnan(verticalSpeed) && std::isnan(yawRate)) {
         description = "No velocity limits set";
     } else {
-        description = fmt::format("Current limits: ");
+        description = "Current limits: ";
         if (!std::isnan(horizontalSpeed)) {
             description += fmt::format("Horizontal speed: {:.2f}", horizontalSpeed);
         }
@@ -64,7 +64,6 @@ void constructStatusDescription(const float horizontalSpeed, const float vertica
             description += fmt::format(" Yaw rate: {:.2f}", yawRate);
         }
     }
-    return;
 }
 
 int main(int argc, char** argv)
