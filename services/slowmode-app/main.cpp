@@ -34,20 +34,6 @@ std::string getEnvVar(std::string const& key)
     return val;
 }
 
-void manualBroadcast(VelocityLimits& velocityLimits, const ConnectionHandler& ch, char** argv)
-{
-    SPDLOG_INFO("Manual velocity limits");
-    velocityLimits.setHorizontalSpeed(std::stof(argv[1]));
-    velocityLimits.setVerticalSpeed(std::stof(argv[2]));
-    velocityLimits.setYawRateInDegrees(std::stof(argv[3]));
-
-    while (!should_exit) {
-        ch.sendVelocityLimits(velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate());
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-    return;
-}
-
 void constructStatusDescription(const float horizontalSpeed, const float verticalSpeed, const float yawRate, std::string& description)
 {
     if (std::isnan(horizontalSpeed) && std::isnan(verticalSpeed) && std::isnan(yawRate)) {
@@ -111,15 +97,6 @@ int main(int argc, char** argv)
 
     std::string description = "";
     std::string error = "";
-
-    // Manual assignments of velocity limits if 3 arguments are passed
-    if (argc == 4) {
-        constructStatusDescription(
-            velocityLimits.getHorizontalSpeed(), velocityLimits.getVerticalSpeed(), velocityLimits.getYawRate(), description);
-        app.stateCallback(App::app_status_code_t::SUCCESS, description, error);
-        manualBroadcast(velocityLimits, ch, argv);
-        return 0;
-    }
 
     while (!should_exit) {
         bool updated = false;
