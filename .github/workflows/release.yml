@@ -1,0 +1,38 @@
+name: Create release artifacts
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build_app:
+    runs-on: ubuntu-22.04
+    env:
+      RELEASE_FILENAME: com.auterion.slowmode-app-${{ github.event.release.tag_name }}.auterionos
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Install auterion-cli
+        run: pip install auterion-cli
+
+      - name: Build
+        run: |
+          auterion-cli app build --app-version="${{ github.ref_name }}"
+          cd build
+          mv com.auterion.slowmode-app.auterionos ${{ env.RELEASE_FILENAME }}
+
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/${{ env.RELEASE_FILENAME}}
