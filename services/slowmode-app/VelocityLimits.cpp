@@ -85,6 +85,9 @@ bool VelocityLimits::setYawRate(float yaw_rate)
 
 bool VelocityLimits::setYawRateInDegrees(float yaw_rate)
 {
+    if (yaw_rate != yaw_rate) {
+        return setYawRate(NAN);
+    }
     return setYawRate(yaw_rate * float(M_PI) / 180);
 }
 
