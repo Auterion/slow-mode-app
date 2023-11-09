@@ -1,4 +1,4 @@
-FROM auterion/app-base:v2
+FROM auterion/app-base:v2 as build-stage
 
 ARG RESTINIO_VERSION=0.6.18
 
@@ -24,6 +24,10 @@ COPY . ./app/
 
 RUN cmake -S ./app/ -B /app/build -DBUILD_SHARED_LIBS=OFF
 RUN cmake --build ./app/build -j 8
+
+FROM auterion/app-base:v2 as run-stage
+
+COPY --from=build-stage /app/build /app/build
 
 WORKDIR /app/build
 CMD ./slowmode-app-tcp
