@@ -98,6 +98,10 @@ int main(int argc, char** argv)
     std::string description = "";
     std::string error = "";
 
+    constructStatusDescription(
+                NAN, NAN, NAN, description);
+    app.stateCallback(App::app_status_code_t::SUCCESS, description, error);
+
     while (!should_exit) {
         bool updated = false;
         if (ch.pmExists()) {
