@@ -17,21 +17,21 @@ private:
     float _standard_fov;
     float _yaw_rate_multiplicator;
 
-    float _computeLinearScale(float focal_length, float zoom_level);
-    float _computeQuadraticScale(float focal_length, float zoom_level);
+    float _computeLinearScale(float focal_length, float zoom_level) const;
+    float _computeQuadraticScale(float focal_length, float zoom_level) const;
 
 public:
     VelocityLimits(float horizontal_speed, float vertical_speed, float yaw_rate, float standard_focal_length, float yaw_rate_multiplicator);
 
-    void computeAndUpdateYawRate(float focal_length, float standard_focal_length, float zoom_level, int mode = 0);
-    void setHorizontalSpeed(float horizontal_speed);
-    void setVerticalSpeed(float vertical_speed);
-    void setYawRate(float yaw_rate);
-    void setYawRateInDegrees(float yaw_rate);
+    bool computeAndUpdateYawRate(float focal_length, float zoom_level, int mode = 0);
+    bool setHorizontalSpeed(float horizontal_speed);
+    bool setVerticalSpeed(float vertical_speed);
+    bool setYawRate(float yaw_rate);
+    bool setYawRateInDegrees(float yaw_rate);
 
-    float getHorizontalSpeed();
-    float getVerticalSpeed();
-    float getYawRate();
+    float getHorizontalSpeed() const;
+    float getVerticalSpeed() const;
+    float getYawRate() const;
 };
 
 #endif // VELOCITYLIMITS_H
