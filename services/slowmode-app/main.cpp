@@ -47,7 +47,7 @@ void constructStatusDescription(const float horizontalSpeed, const float vertica
             description += fmt::format(" Vertical speed: {:.2f}", verticalSpeed);
         }
         if (!std::isnan(yawRate)) {
-            description += fmt::format(" Yaw rate: {:.2f}", yawRate);
+            description += fmt::format(" Yaw rate: {:.2f} rad/s", yawRate);
         }
     }
 }
@@ -98,8 +98,7 @@ int main(int argc, char** argv)
     std::string description = "";
     std::string error = "";
 
-    constructStatusDescription(
-                NAN, NAN, NAN, description);
+    constructStatusDescription(NAN, NAN, NAN, description);
     app.stateCallback(App::app_status_code_t::SUCCESS, description, error);
 
     while (!should_exit) {

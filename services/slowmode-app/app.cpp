@@ -23,6 +23,9 @@ std::unique_ptr<restinio::router::express_router_t<>> App::_createRouter()
 void App::stateCallback(app_status_code_t new_state, std::string_view description, std::string_view error)
 {
     std::lock_guard<std::mutex> lock(_state_mtx);
+    if (new_state == _appStatus.code && description == _appStatus.description && error == _appStatus.error) {
+        return;
+    }
     _appStatus.code = new_state;
     _appStatus.description = description;
     _appStatus.error = error;

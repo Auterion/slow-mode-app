@@ -4,7 +4,6 @@ VelocityLimits::VelocityLimits(
     float horizontal_speed, float vertical_speed, float yaw_rate, float standard_focal_length, float yaw_rate_multiplicator) :
     _horizontal_speed(horizontal_speed),
     _vertical_speed(vertical_speed),
-    _yaw_rate(yaw_rate),
     _max_yaw_rate(yaw_rate),
     _standard_focal_length(standard_focal_length),
     _yaw_rate_multiplicator(yaw_rate_multiplicator)
@@ -13,6 +12,7 @@ VelocityLimits::VelocityLimits(
         _standard_focal_length = NAN;
         SPDLOG_INFO("Invalid standard focal length");
     }
+    _yaw_rate = NAN;
 }
 
 float VelocityLimits::_computeLinearScale(float focal_length, float zoom_level) const
@@ -37,7 +37,7 @@ bool VelocityLimits::computeAndUpdateYawRate(float focal_length, float zoom_leve
 {
     // If Pyaload Manager does not report focal length or zoom level, set yaw rate
     // to default
-    if (focal_length != focal_length || focal_length <= 0.f || zoom_level != zoom_level || zoom_level <= 0.f) {
+    if (std::isnan(focal_length) || focal_length <= 0.f || std::isnan(zoom_level) || zoom_level <= 0.f) {
         return setYawRateInDegrees(_max_yaw_rate);
     }
 
@@ -76,7 +76,9 @@ bool VelocityLimits::setVerticalSpeed(float vertical_speed)
 
 bool VelocityLimits::setYawRate(float yaw_rate)
 {
-    if (abs(_yaw_rate - yaw_rate) > 1e-5) {
+    if (std::isnan(yaw_rate) && std::isnan(_yaw_rate)) {
+        return false;
+    } else if (std::isnan(yaw_rate) != std::isnan(_yaw_rate) || fabs(_yaw_rate - yaw_rate) > 1e-5) {
         _yaw_rate = yaw_rate;
         return true;
     }
@@ -85,9 +87,6 @@ bool VelocityLimits::setYawRate(float yaw_rate)
 
 bool VelocityLimits::setYawRateInDegrees(float yaw_rate)
 {
-    if (yaw_rate != yaw_rate) {
-        return setYawRate(NAN);
-    }
     return setYawRate(yaw_rate * float(M_PI) / 180);
 }
 
