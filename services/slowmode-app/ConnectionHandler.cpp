@@ -48,9 +48,11 @@ void ConnectionHandler::_handlePM()
             _connection->send(*_PM_request);
             try {
                 auto res = _connection->receive(expectation, 1000);
-                SPDLOG_INFO("Received camera focal length: {}", res["focal_length"].as<float>());
                 _focal_legth = res["focal_length"].as<float>();
-                _focal_length_set = true;
+                if (_focal_legth > 0) {
+                    SPDLOG_INFO("Received camera focal length: {}", _focal_legth);
+                    _focal_length_set = true;
+                }
             } catch (const std::exception& e) {
                 SPDLOG_ERROR(e.what());
                 continue;
