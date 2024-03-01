@@ -22,7 +22,7 @@ RUN curl --proto "=https" -L https://github.com/Stiffstream/restinio/releases/do
 
 COPY . ./app/
 
-RUN cmake -S ./app/ -B /app/build -DBUILD_SHARED_LIBS=OFF
+RUN cmake -S ./app/ -B /app/build -DCMAKE_BUILD_TYPE=Release
 RUN cmake --build ./app/build -j 8
 
 FROM auterion/app-base:v2 as run-stage
