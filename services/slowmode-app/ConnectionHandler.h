@@ -26,7 +26,7 @@ private:
     mav::TCPClient physical = mav::TCPClient("10.41.1.1", 5790);
 #endif
 
-    std::pair<int, int> _min_max_target_search = {100, 106};
+    std::pair<int, int> _min_max_target_search = {100, 100};
     std::thread _PM_thread, _PM_heartbeat_thread;
     const mav::MessageSet& _message_set;
     std::shared_ptr<mav::NetworkRuntime> _runtime;
