@@ -47,7 +47,7 @@ void constructStatusDescription(const float horizontalSpeed, const float vertica
             description += fmt::format(" Vertical speed: {:.2f}", verticalSpeed);
         }
         if (!std::isnan(yawRate)) {
-            description += fmt::format(" Yaw rate: {:.2f} rad/s", yawRate);
+            description += fmt::format(" Yaw rate: {:.2f} deg/s", yawRate / M_PI * 180.0f);
         }
     }
 }
